@@ -382,23 +382,18 @@
         bikes = sampleBikes;
       }
 
-      if (!rentals) {
-        localStorage.setItem(STORAGE_KEYS.RENTALS, JSON.stringify([]));
-        rentals = [];
-      }
+    if (!rentals) localStorage.setItem(STORAGE_KEYS.RENTALS, JSON.stringify([]));
+    return { bikes, rentals };
+  }
 
-      // Simpan kembali agar sinkron antar user di perangkat sama
-      localStorage.setItem(STORAGE_KEYS.BIKES, JSON.stringify(bikes));
-      localStorage.setItem(STORAGE_KEYS.RENTALS, JSON.stringify(rentals));
-    }
-
+      const { bikes, rentals } = loadOrInit();
       const motorGrid = document.getElementById("motorGrid");
       function numberWithDots(x) {
         return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
       }
 
       function renderBikes() {
-        const bikes = JSON.parse(localStorage.getItem(STORAGE_KEYS.BIKES));
+        const bikes = JSON.parse(localStorage.getItem(STORAGE_KEYS.BIKES)) || [];
         motorGrid.innerHTML = "";
         bikes.forEach((b) => {
           const card = document.createElement("div");
@@ -942,6 +937,7 @@
       // ---- Simpan motor baru ----
       document.getElementById("addBikeForm").addEventListener("submit", (e) => {
         e.preventDefault();
+        let bikes = JSON.parse(localStorage.getItem(STORAGE_KEYS.BIKES)) || [];
         const name = document.getElementById("bikeNameInput").value.trim();
         const rateHour = parseInt(
           document.getElementById("bikeRateHour").value
@@ -950,7 +946,7 @@
         const emoji = document.getElementById("bikeEmoji").value.trim() || "🛵";
         const file = document.getElementById("bikeImageInput").files[0];
 
-        const bikes = JSON.parse(localStorage.getItem(STORAGE_KEYS.BIKES));
+        
 
         const newBike = {
           id: "bike" + Date.now(),
@@ -1196,10 +1192,11 @@
       });
 
       // --- Hapus sesi admin otomatis saat keluar, refresh, atau tutup tab ---
-      window.addEventListener("beforeunload", () => {
-        // hapus sesi admin agar tidak auto-login lagi
-        localStorage.removeItem("admin_logged_in");
-      });
+      window.addEventListener("storage", (e) => {
+    if (e.key === STORAGE_KEYS.BIKES) {
+      renderBikes(); // update tampilan jika ada perubahan dari tab/admin lain
+    }
+  });
     </script>
   </body>
 </html>
