@@ -342,7 +342,16 @@
     <script>
       ///-- Inisialisasi & Variabel Global ---
       const STORAGE_KEYS = { BIKES: "sewa_bikes", RENTALS: "sewa_rentals" };
+      const ADMIN_KEY = "admin_account";
+      const SESSION_KEY = "admin_logged_in";
       let isAdmin = false;
+
+      // Default shared admin (bisa diubah nanti lewat "Daftar Ulang Admin")
+      const DEFAULT_ADMIN = {
+        email: "admin@sewa.local",
+        username: "admin",
+        password: btoa("admin123"), // disimpan base64 seperti sebelumnya
+      };
 
       // Kirim pesan WhatsApp (fungsi global)
       function kirimWhatsApp(phone, message) {
@@ -377,6 +386,19 @@
           localStorage.setItem(STORAGE_KEYS.BIKES, JSON.stringify(sampleBikes));
         if (!localStorage.getItem(STORAGE_KEYS.RENTALS))
           localStorage.setItem(STORAGE_KEYS.RENTALS, JSON.stringify([]));
+
+        // Pastikan selalu ada 1 admin (shared). Jika belum ada, set default.
+        if (!localStorage.getItem(ADMIN_KEY)) {
+          localStorage.setItem(ADMIN_KEY, JSON.stringify(DEFAULT_ADMIN));
+          // Notifikasi sekali agar tahu kredensial default (atau hapus alert jika ingin silent)
+          console.info(
+            "Default admin account created:",
+            DEFAULT_ADMIN.username,
+            "/ password: admin123"
+          );
+          // Tampil notification kecil: (non-intrusive)
+          // Jangan paksa prompt pembuatan akun; kita gunakan shared default.
+        }
       }
       loadOrInit();
 
@@ -520,33 +542,6 @@
           return;
         }
 
-        // Update end date/time preview
-        function updateEndDateTime() {
-          const startInput = document.getElementById("startDateTime");
-          const hours = parseInt(document.getElementById("hours").value) || 1;
-          const endPreview = document.getElementById("endDateTimePreview");
-          if (!startInput.value) {
-            endPreview.textContent = "Selesai sewa: -";
-            return;
-          }
-          const startTime = new Date(startInput.value);
-          const endTime = new Date(
-            startTime.getTime() + hours * 60 * 60 * 1000
-          );
-          endPreview.textContent =
-            "Selesai sewa: " +
-            endTime.toLocaleString("id-ID", {
-              dateStyle: "short",
-              timeStyle: "short",
-            });
-        }
-        document
-          .getElementById("hours")
-          .addEventListener("input", updateEndDateTime);
-        document
-          .getElementById("startDateTime")
-          .addEventListener("change", updateEndDateTime);
-
         // Tambahan keterangan ID
         let idDesc = "";
         if (ktp && student) idDesc = "KTP & Kartu Mahasiswa";
@@ -624,14 +619,7 @@
 
       // ---- Admin ----
       const adminPanel = document.getElementById("adminPanel");
-      let adminPassword; // hanya disimpan di memori, tidak di localStorage
-
-      // ---- Login & Logout Admin ----
-      const ADMIN_KEY = "admin_account";
-      const SESSION_KEY = "admin_logged_in";
       const adminBtn = document.getElementById("adminBtn");
-
-      let gestureLeft = 0; // hitungan geser kiri
 
       // Fungsi render tombol logout
       function renderLogoutButton(show) {
@@ -665,32 +653,70 @@
         renderRentalTable();
       }
 
+      // Pasang handler daftar ulang admin SEKALI (dipindahkan keluar supaya tidak ter-attach berulang)
+      document
+        .getElementById("reRegisterAdmin")
+        .addEventListener("click", daftarUlangAdmin);
+
+      function daftarUlangAdmin() {
+        const saved = JSON.parse(localStorage.getItem(ADMIN_KEY));
+        if (!saved) {
+          alert("Belum ada akun admin yang terdaftar.");
+          return;
+        }
+
+        alert("🔁 Daftar ulang admin memerlukan verifikasi akun lama.");
+
+        const oldEmail = prompt("Masukkan email admin lama:");
+        const oldUser = prompt("Masukkan username lama:");
+        const oldPass = prompt("Masukkan password lama:");
+
+        if (
+          oldEmail?.trim().toLowerCase() === saved.email &&
+          oldUser?.trim() === saved.username &&
+          btoa(oldPass?.trim()) === saved.password
+        ) {
+          const newEmail = prompt("Masukkan email admin baru:");
+          const newUser = prompt("Masukkan username admin baru:");
+          const newPass = prompt("Masukkan password admin baru:");
+
+          if (newEmail && newUser && newPass) {
+            localStorage.setItem(
+              ADMIN_KEY,
+              JSON.stringify({
+                email: newEmail.trim().toLowerCase(),
+                username: newUser.trim(),
+                password: btoa(newPass.trim()),
+              })
+            );
+            // keluar sesi lama supaya harus login ulang
+            localStorage.removeItem(SESSION_KEY);
+            alert(
+              "🎉 Akun admin berhasil diperbarui! Silakan login kembali dengan akun baru."
+            );
+            location.reload();
+          } else {
+            alert("❌ Daftar ulang dibatalkan.");
+          }
+        } else {
+          alert("❌ Verifikasi gagal. Email, username, atau password lama salah.");
+        }
+      }
+
       // === Klik tombol Admin ===
       adminBtn.addEventListener("click", () => {
         const saved = JSON.parse(localStorage.getItem(ADMIN_KEY));
 
-        // Belum ada akun → buat baru
+        // Pastikan ada saved (seharusnya selalu ada karena loadOrInit)
         if (!saved) {
-          const email = prompt("Masukkan email admin (untuk pemulihan):");
-          const username = prompt("Buat username admin:");
-          const password = prompt("Buat password admin:");
-          if (!email || !username || !password) {
-            alert("❌ Pendaftaran dibatalkan.");
-            return;
-          }
-          localStorage.setItem(
-            ADMIN_KEY,
-            JSON.stringify({
-              email: email.trim().toLowerCase(),
-              username: username.trim(),
-              password: btoa(password.trim()),
-            })
+          alert(
+            "Akun admin belum tersedia. Silakan hubungi pemilik aplikasi (default admin akan dibuat)."
           );
-          alert("✅ Akun admin berhasil dibuat! Klik Admin lagi untuk login.");
+          loadOrInit(); // force create default jika aneh
           return;
         }
 
-        // Sudah login
+        // Jika sudah login
         if (localStorage.getItem(SESSION_KEY)) {
           alert("⚙️ Anda sudah login sebagai admin.");
           adminPanel.style.display = "block";
@@ -701,58 +727,7 @@
           return;
         }
 
-        // ---- Daftar Ulang Admin ----
-        document
-          .getElementById("reRegisterAdmin")
-          .addEventListener("click", daftarUlangAdmin);
-
-        function daftarUlangAdmin() {
-          const saved = JSON.parse(localStorage.getItem(ADMIN_KEY));
-          if (!saved) {
-            alert("Belum ada akun admin yang terdaftar.");
-            return;
-          }
-
-          alert("🔁 Daftar ulang admin memerlukan verifikasi akun lama.");
-
-          const oldEmail = prompt("Masukkan email admin lama:");
-          const oldUser = prompt("Masukkan username lama:");
-          const oldPass = prompt("Masukkan password lama:");
-
-          if (
-            oldEmail?.trim().toLowerCase() === saved.email &&
-            oldUser?.trim() === saved.username &&
-            btoa(oldPass?.trim()) === saved.password
-          ) {
-            const newEmail = prompt("Masukkan email admin baru:");
-            const newUser = prompt("Masukkan username admin baru:");
-            const newPass = prompt("Masukkan password admin baru:");
-
-            if (newEmail && newUser && newPass) {
-              localStorage.setItem(
-                ADMIN_KEY,
-                JSON.stringify({
-                  email: newEmail.trim().toLowerCase(),
-                  username: newUser.trim(),
-                  password: btoa(newPass.trim()),
-                })
-              );
-              localStorage.removeItem(SESSION_KEY);
-              alert(
-                "🎉 Akun admin berhasil diperbarui! Silakan login kembali dengan akun baru."
-              );
-              location.reload();
-            } else {
-              alert("❌ Daftar ulang dibatalkan.");
-            }
-          } else {
-            alert(
-              "❌ Verifikasi gagal. Email, username, atau password lama salah."
-            );
-          }
-        }
-
-        // Menu pilihan login + lupa password + daftar ulang
+        // Menu pilihan login + lupa password
         const choice = prompt("Ketik:\n1 = Login\n2 = Lupa Password");
 
         if (choice === "1") {
@@ -771,7 +746,7 @@
           }
         } else if (choice === "2") {
           const email = prompt("Masukkan email admin terdaftar:");
-          if (email.trim().toLowerCase() === saved.email) {
+          if (email?.trim().toLowerCase() === saved.email) {
             const newPwd = prompt("Masukkan password baru:");
             if (newPwd) {
               saved.password = btoa(newPwd.trim());
@@ -783,31 +758,6 @@
           }
         }
       });
-
-// === Sinkronisasi Akun Global Berdasarkan Domain ===
-(function syncGlobalAdmin() {
-  const domainKey = "global_admin_account";
-  const localAdmin = localStorage.getItem(ADMIN_KEY);
-  const globalAdmin = localStorage.getItem(domainKey);
-
-  // Jika akun lokal belum ada, ambil dari global
-  if (!localAdmin && globalAdmin) {
-    localStorage.setItem(ADMIN_KEY, globalAdmin);
-  }
-
-  // Jika akun global belum ada, tapi lokal sudah dibuat, simpan ke global
-  if (localAdmin && !globalAdmin) {
-    localStorage.setItem(domainKey, localAdmin);
-  }
-
-  // Sinkronisasi otomatis setiap 5 detik agar konsisten antar tab
-  setInterval(() => {
-    const updatedGlobal = localStorage.getItem(domainKey);
-    if (updatedGlobal && updatedGlobal !== localStorage.getItem(ADMIN_KEY)) {
-      localStorage.setItem(ADMIN_KEY, updatedGlobal);
-    }
-  }, 5000);
-})();
 
       // ---- Render tabel riwayat sewa ----
 
@@ -1064,7 +1014,6 @@
         input.click();
       }
 
-
       // ✅ Fungsi untuk menyelesaikan sewa
       function completeRental(id, bikeId) {
         const rentals = JSON.parse(localStorage.getItem(STORAGE_KEYS.RENTALS));
@@ -1205,11 +1154,10 @@
         );
       });
 
-      // --- Hapus sesi admin otomatis saat keluar, refresh, atau tutup tab ---
-      window.addEventListener("beforeunload", () => {
-        // hapus sesi admin agar tidak auto-login lagi
-        localStorage.removeItem("admin_logged_in");
-      });
+      // NOTE: saya menghapus auto-clear session pada beforeunload agar account shared lebih nyaman.
+      // Jika Anda ingin sesi otomatis dihapus saat tutup/reload, tambahkan kembali:
+      // window.addEventListener("beforeunload", () => { localStorage.removeItem(SESSION_KEY); });
+
     </script>
   </body>
 </html>
