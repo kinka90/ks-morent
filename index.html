@@ -373,27 +373,20 @@
       ];
 
       function loadOrInit() {
-      let bikes = JSON.parse(localStorage.getItem(STORAGE_KEYS.BIKES));
-      let rentals = JSON.parse(localStorage.getItem(STORAGE_KEYS.RENTALS));
-
-      // Jika data belum ada, inisialisasi pertama kali
-      if (!bikes || bikes.length === 0) {
-        localStorage.setItem(STORAGE_KEYS.BIKES, JSON.stringify(sampleBikes));
-        bikes = sampleBikes;
+        if (!localStorage.getItem(STORAGE_KEYS.BIKES))
+          localStorage.setItem(STORAGE_KEYS.BIKES, JSON.stringify(sampleBikes));
+        if (!localStorage.getItem(STORAGE_KEYS.RENTALS))
+          localStorage.setItem(STORAGE_KEYS.RENTALS, JSON.stringify([]));
       }
+      loadOrInit();
 
-    if (!rentals) localStorage.setItem(STORAGE_KEYS.RENTALS, JSON.stringify([]));
-    return { bikes, rentals };
-  }
-
-      const { bikes, rentals } = loadOrInit();
       const motorGrid = document.getElementById("motorGrid");
       function numberWithDots(x) {
         return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
       }
 
       function renderBikes() {
-        const bikes = JSON.parse(localStorage.getItem(STORAGE_KEYS.BIKES)) || [];
+        const bikes = JSON.parse(localStorage.getItem(STORAGE_KEYS.BIKES));
         motorGrid.innerHTML = "";
         bikes.forEach((b) => {
           const card = document.createElement("div");
@@ -435,7 +428,6 @@
         });
       }
       renderBikes();
-      
 
       const rentModal = document.getElementById("rentModal");
       const rentForm = document.getElementById("rentForm");
@@ -792,6 +784,31 @@
         }
       });
 
+// === Sinkronisasi Akun Global Berdasarkan Domain ===
+(function syncGlobalAdmin() {
+  const domainKey = "global_admin_account";
+  const localAdmin = localStorage.getItem(ADMIN_KEY);
+  const globalAdmin = localStorage.getItem(domainKey);
+
+  // Jika akun lokal belum ada, ambil dari global
+  if (!localAdmin && globalAdmin) {
+    localStorage.setItem(ADMIN_KEY, globalAdmin);
+  }
+
+  // Jika akun global belum ada, tapi lokal sudah dibuat, simpan ke global
+  if (localAdmin && !globalAdmin) {
+    localStorage.setItem(domainKey, localAdmin);
+  }
+
+  // Sinkronisasi otomatis setiap 5 detik agar konsisten antar tab
+  setInterval(() => {
+    const updatedGlobal = localStorage.getItem(domainKey);
+    if (updatedGlobal && updatedGlobal !== localStorage.getItem(ADMIN_KEY)) {
+      localStorage.setItem(ADMIN_KEY, updatedGlobal);
+    }
+  }, 5000);
+})();
+
       // ---- Render tabel riwayat sewa ----
 
       function renderRentalTable() {
@@ -937,7 +954,6 @@
       // ---- Simpan motor baru ----
       document.getElementById("addBikeForm").addEventListener("submit", (e) => {
         e.preventDefault();
-        let bikes = JSON.parse(localStorage.getItem(STORAGE_KEYS.BIKES)) || [];
         const name = document.getElementById("bikeNameInput").value.trim();
         const rateHour = parseInt(
           document.getElementById("bikeRateHour").value
@@ -946,7 +962,7 @@
         const emoji = document.getElementById("bikeEmoji").value.trim() || "🛵";
         const file = document.getElementById("bikeImageInput").files[0];
 
-        
+        const bikes = JSON.parse(localStorage.getItem(STORAGE_KEYS.BIKES));
 
         const newBike = {
           id: "bike" + Date.now(),
@@ -1084,8 +1100,6 @@
         alert("Penyewaan telah diselesaikan dan pesan terkirim.");
       }
 
-      
-
       // ---- Download PDF Buku Kas (Tampilan sama seperti tabel admin) ----
 
       function formatDateSafe(d) {
@@ -1192,11 +1206,10 @@
       });
 
       // --- Hapus sesi admin otomatis saat keluar, refresh, atau tutup tab ---
-      window.addEventListener("storage", (e) => {
-    if (e.key === STORAGE_KEYS.BIKES) {
-      renderBikes(); // update tampilan jika ada perubahan dari tab/admin lain
-    }
-  });
+      window.addEventListener("beforeunload", () => {
+        // hapus sesi admin agar tidak auto-login lagi
+        localStorage.removeItem("admin_logged_in");
+      });
     </script>
   </body>
 </html>
