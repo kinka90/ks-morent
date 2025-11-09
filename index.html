@@ -160,9 +160,19 @@
   <body>
     <div class="container">
       <header>
-        <h1>Aplikasi Sewa Motor (Lokal)</h1>
+        <h1>Aplikasi Sewa Motor (Area Sasa)</h1>
         <button id="adminBtn" class="btn">
-          <i class="fa-solid fa-lock"></i> Admin
+          <i class="fa-solid fa-lock"></i> Admin 
+          <span id="notifBadge" style="
+            background:red;
+            color:white;
+            padding:2px 6px;
+            border-radius:10px;
+            font-size:12px;
+            position:relative;
+            top:-6px;
+            right:6px;
+            display:none;">0</span>
         </button>
       </header>
 
@@ -330,8 +340,7 @@
       </div>
 
       <footer>
-        Made for you — buka file <strong>index.html</strong> di browser
-        (Chrome/Edge). Data disimpan di localStorage.
+        <strong>🏍️Rental Motor</strong> — Teman Setia Menjelajah Kota dengan Nyaman dan Mudah!⚡
       </footer>
     </div>
 
@@ -342,6 +351,7 @@
     <script>
       ///-- Inisialisasi & Variabel Global ---
       const STORAGE_KEYS = { BIKES: "sewa_bikes", RENTALS: "sewa_rentals" };
+      const MSG_KEY = "new_messages"; // untuk menyimpan pesan baru
       let isAdmin = false;
 
       // Kirim pesan WhatsApp (fungsi global)
@@ -427,6 +437,56 @@
           motorGrid.appendChild(card);
         });
       }
+
+// --- Update badge notifikasi pesan baru ---
+      function updateNotifBadge() {
+      const msgs = JSON.parse(localStorage.getItem(MSG_KEY)) || [];
+      const unread = msgs.filter(m => !m.read).length;
+      const badge = document.getElementById("notifBadge");
+      if (unread > 0) {
+        badge.textContent = unread;
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+    }
+    updateNotifBadge();
+
+
+// --- Tampilkan daftar pesan di halaman admin ---
+function showMessagesForAdmin() {
+  if (!isAdmin) return;
+  const msgs = JSON.parse(localStorage.getItem(MSG_KEY)) || [];
+  if (msgs.length === 0) return;
+
+  // tampilkan daftar pesan baru
+  let html = "<h4>Notifikasi Pesanan Baru</h4><ul style='list-style:none;padding:0'>";
+  msgs.forEach(m => {
+    html += `<li style="margin-bottom:6px;border-bottom:1px solid #eee;padding-bottom:4px">
+      🛵 <strong>${m.name}</strong> menyewa <b>${m.bikeName}</b><br>
+      💰 Total: Rp ${numberWithDots(m.total)} <br>
+      <span style="font-size:12px;color:#666">${m.time}</span>
+    </li>`;
+  });
+  html += "</ul>";
+
+  // tambahkan ke bawah tabel admin
+  const notifBox = document.createElement("div");
+  notifBox.id = "notifBox";
+  notifBox.className = "card";
+  notifBox.innerHTML = html;
+  document.getElementById("adminPanel").appendChild(notifBox);
+
+  // Setelah ditampilkan, tandai semua sudah dibaca
+  msgs.forEach(m => (m.read = true));
+  localStorage.setItem(MSG_KEY, JSON.stringify(msgs));
+
+  // Perbarui badge agar hilang
+  updateNotifBadge();
+}
+
+
+// --- Inisialisasi render awal ---
       renderBikes();
 
       const rentModal = document.getElementById("rentModal");
@@ -592,8 +652,23 @@
         rentals.push(newR);
         localStorage.setItem(STORAGE_KEYS.BIKES, JSON.stringify(bikes));
         localStorage.setItem(STORAGE_KEYS.RENTALS, JSON.stringify(rentals));
+        // Simpan pesan baru untuk admin
+        let msgs = JSON.parse(localStorage.getItem(MSG_KEY)) || [];
+        msgs.push({
+          id: Date.now(),
+          name,
+          phone,
+          bikeName: bike.name,
+          total,
+          read: false,
+          time: new Date().toLocaleString("id-ID", { timeStyle: "short", dateStyle: "short" })
+        });
+        localStorage.setItem(MSG_KEY, JSON.stringify(msgs));
+        updateNotifBadge();
+
         renderBikes();
         renderRentalTable();
+        showMessagesForAdmin();
         closeModal();
 
         // --- Kirim pesan WhatsApp otomatis saat sewa dibuat ---
@@ -663,6 +738,8 @@
         renderLogoutButton(true);
         renderBikes();
         renderRentalTable();
+        showMessagesForAdmin();
+
       }
 
       // === Klik tombol Admin ===
@@ -697,7 +774,9 @@
           isAdmin = true;
           renderBikes();
           renderRentalTable();
+          showMessagesForAdmin();
           renderLogoutButton(true);
+          updateNotifBadge();
           return;
         }
 
@@ -765,6 +844,7 @@
             adminPanel.style.display = "block";
             renderBikes();
             renderRentalTable();
+            showMessagesForAdmin();
             renderLogoutButton(true);
           } else {
             alert("❌ Username atau password salah.");
@@ -876,6 +956,7 @@
 
         localStorage.setItem(STORAGE_KEYS.RENTALS, JSON.stringify(rentals));
         renderRentalTable();
+        showMessagesForAdmin();
 
         const pesanUbah =
           `Halo ${r.name}, jadwal sewa Anda untuk *${r.bikeName}* telah diperbarui 🛵\n\n` +
@@ -1059,6 +1140,7 @@
         localStorage.setItem(STORAGE_KEYS.BIKES, JSON.stringify(bikes));
         renderBikes();
         renderRentalTable();
+        showMessagesForAdmin();
 
         // --- kirim pesan WhatsApp penyewa ---
         const pesanSelesai =
@@ -1074,6 +1156,26 @@
 
         alert("Penyewaan telah diselesaikan dan pesan terkirim.");
       }
+
+// ---- Tampilkan pesan sewa baru untuk admin ----
+      function showMessagesForAdmin() {
+      const msgs = JSON.parse(localStorage.getItem(MSG_KEY)) || [];
+      if (msgs.length === 0) {
+        alert("Tidak ada pesan baru.");
+        return;
+      }
+
+      let text = "📩 Pesan Sewa Belum Dibaca:\n\n";
+      msgs.forEach((m, i) => {
+        text += `${i + 1}. ${m.name} (${m.phone}) menyewa ${m.bikeName} - Rp ${numberWithDots(m.total)}\n${m.time}\n\n`;
+      });
+      alert(text);
+
+      // tandai sudah dibaca
+      msgs.forEach(m => (m.read = true));
+      localStorage.setItem(MSG_KEY, JSON.stringify(msgs));
+      updateNotifBadge();
+    }
 
       // ---- Download PDF Buku Kas (Tampilan sama seperti tabel admin) ----
 
@@ -1173,6 +1275,7 @@
 
         renderBikes();
         renderRentalTable();
+        showMessagesForAdmin();
         adminPanel.style.display = "block";
         isAdmin = true;
         alert(
