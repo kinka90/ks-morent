@@ -373,12 +373,24 @@
       ];
 
       function loadOrInit() {
-        if (!localStorage.getItem(STORAGE_KEYS.BIKES))
-          localStorage.setItem(STORAGE_KEYS.BIKES, JSON.stringify(sampleBikes));
-        if (!localStorage.getItem(STORAGE_KEYS.RENTALS))
-          localStorage.setItem(STORAGE_KEYS.RENTALS, JSON.stringify([]));
+      let bikes = JSON.parse(localStorage.getItem(STORAGE_KEYS.BIKES));
+      let rentals = JSON.parse(localStorage.getItem(STORAGE_KEYS.RENTALS));
+
+      // Jika data belum ada, inisialisasi pertama kali
+      if (!bikes || bikes.length === 0) {
+        localStorage.setItem(STORAGE_KEYS.BIKES, JSON.stringify(sampleBikes));
+        bikes = sampleBikes;
       }
-      loadOrInit();
+
+      if (!rentals) {
+        localStorage.setItem(STORAGE_KEYS.RENTALS, JSON.stringify([]));
+        rentals = [];
+      }
+
+      // Simpan kembali agar sinkron antar user di perangkat sama
+      localStorage.setItem(STORAGE_KEYS.BIKES, JSON.stringify(bikes));
+      localStorage.setItem(STORAGE_KEYS.RENTALS, JSON.stringify(rentals));
+    }
 
       const motorGrid = document.getElementById("motorGrid");
       function numberWithDots(x) {
@@ -428,6 +440,7 @@
         });
       }
       renderBikes();
+      
 
       const rentModal = document.getElementById("rentModal");
       const rentForm = document.getElementById("rentForm");
@@ -667,56 +680,39 @@
 
       // === Klik tombol Admin ===
       adminBtn.addEventListener("click", () => {
-  const saved = JSON.parse(localStorage.getItem(ADMIN_KEY));
+        const saved = JSON.parse(localStorage.getItem(ADMIN_KEY));
 
-  // Jika belum ada akun
-  if (!saved) {
-    const email = prompt("Masukkan email admin (untuk pemulihan):");
-    const username = prompt("Buat username admin:");
-    const password = prompt("Buat password admin:");
-    if (!email || !username || !password) {
-      alert("❌ Pendaftaran dibatalkan.");
-      return;
-    }
-    localStorage.setItem(
-      ADMIN_KEY,
-      JSON.stringify({
-        email: email.trim().toLowerCase(),
-        username: username.trim(),
-        password: btoa(password.trim()),
-      })
-    );
-    alert("✅ Akun admin berhasil dibuat! Klik Admin lagi untuk login.");
-    return;
-  }
+        // Belum ada akun → buat baru
+        if (!saved) {
+          const email = prompt("Masukkan email admin (untuk pemulihan):");
+          const username = prompt("Buat username admin:");
+          const password = prompt("Buat password admin:");
+          if (!email || !username || !password) {
+            alert("❌ Pendaftaran dibatalkan.");
+            return;
+          }
+          localStorage.setItem(
+            ADMIN_KEY,
+            JSON.stringify({
+              email: email.trim().toLowerCase(),
+              username: username.trim(),
+              password: btoa(password.trim()),
+            })
+          );
+          alert("✅ Akun admin berhasil dibuat! Klik Admin lagi untuk login.");
+          return;
+        }
 
-  // Jika sudah ada akun, lakukan login
-  if (!localStorage.getItem(SESSION_KEY)) {
-    const user = prompt("Masukkan username admin:");
-    const pass = prompt("Masukkan password admin:");
-    if (user === saved.username && btoa(pass) === saved.password) {
-      localStorage.setItem(SESSION_KEY, "true");
-      alert("✅ Login berhasil!");
-      isAdmin = true;
-      adminPanel.style.display = "block";
-      renderLogoutButton(true);
-      renderBikes();
-      renderRentalTable();
-    } else {
-      alert("❌ Username atau password salah!");
-    }
-    return;
-  }
-
-  // Jika sudah login
-  alert("⚙️ Anda sudah login sebagai admin.");
-  adminPanel.style.display = "block";
-  isAdmin = true;
-  renderLogoutButton(true);
-  renderBikes();
-  renderRentalTable();
-
-
+        // Sudah login
+        if (localStorage.getItem(SESSION_KEY)) {
+          alert("⚙️ Anda sudah login sebagai admin.");
+          adminPanel.style.display = "block";
+          isAdmin = true;
+          renderBikes();
+          renderRentalTable();
+          renderLogoutButton(true);
+          return;
+        }
 
         // ---- Daftar Ulang Admin ----
         document
@@ -1091,6 +1087,8 @@
 
         alert("Penyewaan telah diselesaikan dan pesan terkirim.");
       }
+
+      
 
       // ---- Download PDF Buku Kas (Tampilan sama seperti tabel admin) ----
 
