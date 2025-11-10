@@ -403,6 +403,17 @@ document.getElementById("addBikeForm").addEventListener("submit", async e => {
       imageUrl: imageUrl || null
     });
 
+    window.bikes.push({
+    id: newRef.key,
+    name,
+    rateHour,
+    rateDay,
+    status: "available",
+    imageEmoji: emoji,
+    imageUrl: imageUrl || null
+  });
+  renderBikes();
+
     alert("✅ Motor berhasil ditambahkan!");
     addBikeForm.reset();
     addBikeModal.classList.remove("show");
@@ -411,40 +422,6 @@ document.getElementById("addBikeForm").addEventListener("submit", async e => {
     alert("❌ Error: " + err.message);
   }
 });
-
-const motors = [
-  {
-    name: "Honda Beat",
-    rateHour: 5000,
-    rateDay: 60000,
-    status: "available",
-    imageEmoji: "🛵",
-    imageUrl: "https://drive.google.com/uc?export=view&id=1u1h5-vU9BnHq1Akjt20Ps4inaYSb3G5R"
-  },
-  {
-    name: "Honda Vario 125",
-    rateHour: 7000,
-    rateDay: 70000,
-    status: "available",
-    imageEmoji: "🏍️",
-    imageUrl: "https://drive.google.com/uc?export=view&id=1CkSON7XRCYgSePAehDEJC_R7DzNK7TUL"
-  },
-  {
-    name: "Yamaha NMAX 155",
-    rateHour: 10000,
-    rateDay: 90000,
-    status: "available",
-    imageEmoji: "🛵",
-    imageUrl: "https://drive.google.com/uc?export=view&id=1U3p5eu2hZE0TNMLpPJpSd0QGwrYqzPGP"
-  }
-];
-
-motors.forEach(async data => {
-  const newRef = push(ref(db, "bikes"));
-  await set(newRef, data);
-  console.log("✅ Motor ditambahkan:", data.name);
-});
-
 
 
 </script>
