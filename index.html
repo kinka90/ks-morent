@@ -224,7 +224,12 @@ function renderRentalTable(){
 // Load data realtime
 function loadData(){
   const bikesRef=ref(db,"bikes");
-  onValue(bikesRef,snap=>{const data=snap.val()||{};window.bikes=Object.entries(data).map(([id,val])=>({id,...val}));renderBikes();});
+  onValue(bikesRef, snap => {
+  const data = snap.val() || {};
+  window.bikes = Object.entries(data).map(([id, val]) => ({ id, ...val }));
+  console.log("🆕 Data motor diperbarui:", window.bikes.length, "item");
+  renderBikes();
+});
   const rentalsRef=ref(db,"rentals");
   onValue(rentalsRef,snap=>{const data=snap.val()||{};window.rentals=Object.entries(data).map(([id,val])=>({id,...val}));renderRentalTable();});
 }
@@ -365,34 +370,24 @@ document.getElementById("addBikeForm").addEventListener("submit", async e => {
   const imageFile = document.getElementById("bikeImageInput").files[0];
   let imageUrl = "";
 
-  console.log("➡️ Simpan motor baru:", name, rateHour, rateDay, emoji);
-
   try {
     if (imageFile) {
-      console.log("📤 Upload gambar ke Storage...");
       const imgRef = sRef(storage, "motor/" + Date.now() + "_" + imageFile.name);
       await uploadBytes(imgRef, imageFile);
       imageUrl = await getDownloadURL(imgRef);
-      console.log("✅ URL gambar:", imageUrl);
-    } else {
-      console.log("⚠️ Tidak ada gambar, lanjut tanpa upload.");
     }
 
     const newBikeRef = push(ref(db, "bikes"));
     await set(newBikeRef, { name, rateHour, rateDay, status: "available", imageEmoji: emoji, imageUrl });
 
-    console.log("✅ Motor berhasil disimpan ke database.");
-
-    document.getElementById("addBikeModal").classList.remove("show");
+    alert("✅ Motor berhasil ditambahkan!");
     document.getElementById("addBikeForm").reset();
-    loadData();
+    document.getElementById("addBikeModal").classList.remove("show");
+    // Tidak perlu panggil loadData() lagi, karena onValue() sudah realtime
   } catch (err) {
-    console.error("❌ Gagal menyimpan motor:", err);
-    alert("Gagal menyimpan motor: " + err.message);
+    alert("❌ Gagal menyimpan motor: " + err.message);
   }
 });
-
-
 
 </script>
 </body>
