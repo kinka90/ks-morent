@@ -384,23 +384,33 @@ document.getElementById("cancelAddBike").addEventListener("click",()=>document.g
 document.getElementById("addBikeForm").addEventListener("submit", async e => {
   e.preventDefault();
   if (!window.isAdmin) return alert("Hanya admin bisa menambah motor!");
+
   const name = document.getElementById("bikeNameInput").value.trim();
   const rateHour = parseInt(document.getElementById("bikeRateHour").value, 10);
   const rateDay = parseInt(document.getElementById("bikeRateDay").value, 10);
   const emoji = document.getElementById("bikeEmoji").value.trim() || "🛵";
+  const file = document.getElementById("bikeImageInput").files[0];
 
   if(!name || isNaN(rateHour) || isNaN(rateDay)) return alert("Mohon isi nama dan tarif dengan benar.");
 
+  let imageUrl = null;
+  if(file){
+    const storageRef = sRef(storage, `bikes/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    imageUrl = await getDownloadURL(storageRef);
+  }
+
   const bikeData = {
-  name,
-  rateHour,
-  rateDay,
-  status: "available",
-  imageEmoji: emoji,
-  imageUrl: null, // tidak pakai Firebase Storage
-  createdAt: new Date().toISOString()
-};
-const newRef = await push(ref(db, "bikes"), bikeData);
+    name,
+    rateHour,
+    rateDay,
+    status: "available",
+    imageEmoji: emoji,
+    imageUrl: imageUrl,
+    createdAt: new Date().toISOString()
+  };
+
+  await push(ref(db, "bikes"), bikeData);
   alert("✅ Motor berhasil ditambahkan!");
   document.getElementById("addBikeForm").reset();
   document.getElementById("addBikeModal").classList.remove("show");
