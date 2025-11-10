@@ -365,23 +365,33 @@ document.getElementById("addBikeForm").addEventListener("submit", async e => {
   const imageFile = document.getElementById("bikeImageInput").files[0];
   let imageUrl = "";
 
+  console.log("➡️ Simpan motor baru:", name, rateHour, rateDay, emoji);
+
   try {
     if (imageFile) {
-      const imgRef = sRef(storage, 'motor/' + Date.now() + '_' + imageFile.name);
+      console.log("📤 Upload gambar ke Storage...");
+      const imgRef = sRef(storage, "motor/" + Date.now() + "_" + imageFile.name);
       await uploadBytes(imgRef, imageFile);
       imageUrl = await getDownloadURL(imgRef);
+      console.log("✅ URL gambar:", imageUrl);
+    } else {
+      console.log("⚠️ Tidak ada gambar, lanjut tanpa upload.");
     }
 
     const newBikeRef = push(ref(db, "bikes"));
     await set(newBikeRef, { name, rateHour, rateDay, status: "available", imageEmoji: emoji, imageUrl });
 
+    console.log("✅ Motor berhasil disimpan ke database.");
+
     document.getElementById("addBikeModal").classList.remove("show");
     document.getElementById("addBikeForm").reset();
-    loadData(); // langsung refresh daftar motor
+    loadData();
   } catch (err) {
+    console.error("❌ Gagal menyimpan motor:", err);
     alert("Gagal menyimpan motor: " + err.message);
   }
 });
+
 
 
 </script>
