@@ -307,14 +307,30 @@ const adminBtn=document.getElementById("adminBtn");
 const logoutBtn=document.getElementById("logoutBtn");
 const adminPanel=document.getElementById("adminPanel");
 
-adminBtn.addEventListener("click",async ()=>{
-  try{
-    const result=await signInWithPopup(auth,provider);
-    adminBtn.style.display="none";
-    logoutBtn.style.display="inline-block";
-    adminPanel.style.display="block";
-  }catch(err){alert("Login gagal: "+err.message);}
+adminBtn.addEventListener("click", async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    const adminEmail = "kinkinka90@gmail.com";
+
+    if (user.email === adminEmail) {
+      // ✅ Login sebagai admin
+      alert("Login berhasil sebagai Admin!");
+      adminBtn.style.display = "none";
+      logoutBtn.style.display = "inline-block";
+      adminPanel.style.display = "block";
+      window.isAdmin = true;
+    } else {
+      // 🚫 Bukan admin, hanya boleh lihat
+      alert("Akses ditolak. Hanya admin yang bisa mengedit data.");
+      await signOut(auth);
+      window.isAdmin = false;
+    }
+  } catch (err) {
+    alert("Login gagal: " + err.message);
+  }
 });
+
 logoutBtn.addEventListener("click",async ()=>{
   await signOut(auth);
   adminBtn.style.display="inline-block";
@@ -331,6 +347,7 @@ window.completeRental=async(id,bikeId)=>{
 
 // Delete rental
 window.deleteRental=async(id,bikeId)=>{
+  if (!window.isAdmin) return alert("Aksi ini hanya untuk admin!");
   if(confirm("Hapus rental ini?")){
     await update(ref(db,"bikes/"+bikeId),{status:"available"});
     await set(ref(db,"rentals/"+id),null);
@@ -351,6 +368,7 @@ document.getElementById("downloadPdf").addEventListener("click",()=>{
 
 // Clear data
 document.getElementById("clearData").addEventListener("click",async()=>{
+  if (!window.isAdmin) return alert("Hanya admin yang bisa reset data!");
   if(confirm("Reset semua data?")){
     await set(ref(db,"bikes"),null);
     await set(ref(db,"rentals"),null);
@@ -363,6 +381,7 @@ document.getElementById("addBike").addEventListener("click",()=>document.getElem
 document.getElementById("cancelAddBike").addEventListener("click",()=>document.getElementById("addBikeModal").classList.remove("show"));
 document.getElementById("addBikeForm").addEventListener("submit", async e => {
   e.preventDefault();
+  if (!window.isAdmin) return alert("Hanya admin yang bisa menambah motor!");
   const name = document.getElementById("bikeNameInput").value.trim();
   const rateHour = parseInt(document.getElementById("bikeRateHour").value);
   const rateDay = parseInt(document.getElementById("bikeRateDay").value);
