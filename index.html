@@ -156,7 +156,7 @@ const firebaseConfig = {
 apiKey:"AIzaSyB5uHlXqwLiAmsUeF4Qawsmv0iNRGRdi3c",
 authDomain:"sewa-motor-ba94a.firebaseapp.com",
 projectId:"sewa-motor-ba94a",
-storageBucket:"sewa-motor-ba94a.firebasestorage.app",
+storageBucket:"sewa-motor-ba94a.appspot.com",
 messagingSenderId:"921374655717",
 appId:"1:921374655717:web:d7b21349675a530045c00c",
 databaseURL:"https://sewa-motor-ba94a-default-rtdb.asia-southeast1.firebasedatabase.app/"
@@ -358,22 +358,31 @@ document.getElementById("addBike").addEventListener("click",()=>document.getElem
 document.getElementById("cancelAddBike").addEventListener("click",()=>document.getElementById("addBikeModal").classList.remove("show"));
 document.getElementById("addBikeForm").addEventListener("submit", async e => {
   e.preventDefault();
-  const name = document.getElementById("bikeNameInput").value;
+  const name = document.getElementById("bikeNameInput").value.trim();
   const rateHour = parseInt(document.getElementById("bikeRateHour").value);
   const rateDay = parseInt(document.getElementById("bikeRateDay").value);
   const emoji = document.getElementById("bikeEmoji").value || "🛵";
-  const id = "b_" + Date.now();
   const imageFile = document.getElementById("bikeImageInput").files[0];
   let imageUrl = "";
-  if (imageFile) {
-    const storageRef = sRef(storage, 'motor/' + id + '_' + imageFile.name);
-    await uploadBytes(storageRef, imageFile);
-    imageUrl = await getDownloadURL(storageRef);
+
+  try {
+    if (imageFile) {
+      const imgRef = sRef(storage, 'motor/' + Date.now() + '_' + imageFile.name);
+      await uploadBytes(imgRef, imageFile);
+      imageUrl = await getDownloadURL(imgRef);
+    }
+
+    const newBikeRef = push(ref(db, "bikes"));
+    await set(newBikeRef, { name, rateHour, rateDay, status: "available", imageEmoji: emoji, imageUrl });
+
+    document.getElementById("addBikeModal").classList.remove("show");
+    document.getElementById("addBikeForm").reset();
+    loadData(); // langsung refresh daftar motor
+  } catch (err) {
+    alert("Gagal menyimpan motor: " + err.message);
   }
-  await set(ref(db, "bikes/" + id), { name, rateHour, rateDay, status: "available", imageEmoji: emoji, imageUrl });
-  document.getElementById("addBikeModal").classList.remove("show");
-  document.getElementById("addBikeForm").reset();
 });
+
 
 </script>
 </body>
