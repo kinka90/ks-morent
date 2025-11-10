@@ -98,8 +98,8 @@ footer {margin-top:20px;text-align:center;color:#666;}
   <div class="dialog">
     <h3>Tambah Motor Baru</h3>
     <form id="addBikeForm">
-      <label>URL Gambar Motor (opsional, bisa dari Google Drive)</label>
-      <input type="url" id="bikeImageUrlInput" placeholder="https://..."/>
+      <label>Gambar Motor (opsional)</label>
+      <input type="file" id="bikeImageInput" accept="image/*"/>
       <label>Nama Motor</label>
       <input type="text" id="bikeNameInput" required/>
       <label>Tarif per Jam (Rp)</label>
@@ -149,7 +149,7 @@ footer {margin-top:20px;text-align:center;color:#666;}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 import { getDatabase, ref, set, get, push, update, onValue } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
-
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-storage.js";
 
 // Config Firebase
 const firebaseConfig = {
@@ -166,6 +166,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
+const storage = getStorage(app);
 
 window._firebase = {app, db, auth, provider};
 window.bikes = [];
@@ -181,11 +182,7 @@ function renderBikes(){
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`
-      <div class="motor-img">${
-        b.imageUrl 
-          ? `<img src="${b.imageUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`
-          : (b.imageEmoji || "🛵")
-      }</div>
+      <div class="motor-img">${b.imageUrl?'<img src="'+b.imageUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px">':b.imageEmoji||"🛵"}</div>
       <div style="margin-top:10px"><strong>${b.name}</strong></div>
       <div class="meta">
         <div class="small">Tarif: Rp ${numberWithDots(b.rateHour)}/jam</div>
@@ -382,47 +379,77 @@ document.getElementById("clearData").addEventListener("click",async()=>{
 // Add motor modal
 document.getElementById("addBike").addEventListener("click",()=>document.getElementById("addBikeModal").classList.add("show"));
 document.getElementById("cancelAddBike").addEventListener("click",()=>document.getElementById("addBikeModal").classList.remove("show"));
+// === Replace existing addBikeForm submit handler with this improved version ===
 document.getElementById("addBikeForm").addEventListener("submit", async e => {
   e.preventDefault();
-  if (!window.isAdmin) return alert("Hanya admin!");
-
-  const name = bikeNameInput.value.trim();
-  const rateHour = parseInt(bikeRateHour.value);
-  const rateDay = parseInt(bikeRateDay.value);
-  const emoji = bikeEmoji.value.trim() || "🛵";
-  const imageUrl = document.getElementById("bikeImageUrlInput").value.trim();
-
   try {
-    const newRef = push(ref(db, "bikes"));
-    await set(newRef, {
+    if (!window.isAdmin) return alert("Hanya admin yang bisa menambah motor!");
+
+    const name = document.getElementById("bikeNameInput").value.trim();
+    const rateHour = parseInt(document.getElementById("bikeRateHour").value, 10);
+    const rateDay = parseInt(document.getElementById("bikeRateDay").value, 10);
+    const emoji = document.getElementById("bikeEmoji").value.trim() || "🛵";
+    const imageFile = document.getElementById("bikeImageInput").files[0];
+
+    if (!name || isNaN(rateHour) || isNaN(rateDay)) {
+      return alert("Mohon isi nama dan tarif dengan benar.");
+    }
+
+    // Tampilkan loading singkat agar user tahu proses berjalan
+    const saveBtn = document.querySelector("#addBikeForm button[type='submit']");
+    const prevText = saveBtn.textContent;
+    saveBtn.textContent = "Menyimpan...";
+    saveBtn.disabled = true;
+
+    let imageUrl = null;
+
+    // Upload gambar (jika ada)
+    if (imageFile) {
+      try {
+        const imgRef = sRef(storage, "motor/" + Date.now() + "_" + imageFile.name);
+        const uploadResult = await uploadBytes(imgRef, imageFile);
+        imageUrl = await getDownloadURL(imgRef);
+        console.log("Upload gambar berhasil:", imageUrl, uploadResult);
+      } catch (imgErr) {
+        console.error("Gagal upload gambar:", imgErr);
+        // Lanjutkan tanpa gambar, tapi beri tahu admin
+        alert("Gagal upload gambar. Motor tetap disimpan tanpa gambar.");
+        imageUrl = null;
+      }
+    }
+
+    // Siapkan objek motor
+    const bikeData = {
       name,
       rateHour,
       rateDay,
       status: "available",
       imageEmoji: emoji,
-      imageUrl: imageUrl || null
-    });
+      imageUrl: imageUrl || null,
+      createdAt: new Date().toISOString()
+    };
 
-    window.bikes.push({
-    id: newRef.key,
-    name,
-    rateHour,
-    rateDay,
-    status: "available",
-    imageEmoji: emoji,
-    imageUrl: imageUrl || null
-  });
-  renderBikes();
+    // Gunakan push(ref, value) langsung — lebih sederhana dan aman
+    const newRef = await push(ref(db, "bikes"), bikeData);
+
+    console.log("Motor baru ditambahkan:", newRef.key, bikeData);
 
     alert("✅ Motor berhasil ditambahkan!");
-    addBikeForm.reset();
-    addBikeModal.classList.remove("show");
+    document.getElementById("addBikeForm").reset();
+    document.getElementById("addBikeModal").classList.remove("show");
 
   } catch (err) {
-    alert("❌ Error: " + err.message);
+    console.error("Error menyimpan motor:", err);
+    alert("❌ Gagal menyimpan motor: " + (err && err.message ? err.message : err));
+  } finally {
+    // restore button
+    const saveBtn = document.querySelector("#addBikeForm button[type='submit']");
+    if (saveBtn) {
+      saveBtn.textContent = "Simpan";
+      saveBtn.disabled = false;
+    }
   }
 });
-
 
 </script>
 </body>
