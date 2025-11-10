@@ -98,8 +98,8 @@ footer {margin-top:20px;text-align:center;color:#666;}
   <div class="dialog">
     <h3>Tambah Motor Baru</h3>
     <form id="addBikeForm">
-      <label>Gambar Motor (opsional)</label>
-      <input type="file" id="bikeImageInput" accept="image/*"/>
+      <label>URL Gambar Motor (opsional, bisa dari Google Drive)</label>
+      <input type="url" id="bikeImageUrlInput" placeholder="https://..."/>
       <label>Nama Motor</label>
       <input type="text" id="bikeNameInput" required/>
       <label>Tarif per Jam (Rp)</label>
@@ -149,7 +149,7 @@ footer {margin-top:20px;text-align:center;color:#666;}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 import { getDatabase, ref, set, get, push, update, onValue } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
-import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-storage.js";
+
 
 // Config Firebase
 const firebaseConfig = {
@@ -166,7 +166,6 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
-const storage = getStorage(app);
 
 window._firebase = {app, db, auth, provider};
 window.bikes = [];
@@ -182,7 +181,11 @@ function renderBikes(){
     const card=document.createElement("div");
     card.className="card";
     card.innerHTML=`
-      <div class="motor-img">" style="width:100%;height:100%;object-fit:cover;border-radius:8px">':b.imageEmoji||"🛵"}</div>
+      <div class="motor-img">${
+        b.imageUrl 
+          ? `<img src="${b.imageUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`
+          : (b.imageEmoji || "🛵")
+      }</div>
       <div style="margin-top:10px"><strong>${b.name}</strong></div>
       <div class="meta">
         <div class="small">Tarif: Rp ${numberWithDots(b.rateHour)}/jam</div>
@@ -381,32 +384,68 @@ document.getElementById("addBike").addEventListener("click",()=>document.getElem
 document.getElementById("cancelAddBike").addEventListener("click",()=>document.getElementById("addBikeModal").classList.remove("show"));
 document.getElementById("addBikeForm").addEventListener("submit", async e => {
   e.preventDefault();
-  if (!window.isAdmin) return alert("Hanya admin yang bisa menambah motor!");
+  if (!window.isAdmin) return alert("Hanya admin!");
 
-  const name = document.getElementById("bikeNameInput").value.trim();
-  const rateHour = parseInt(document.getElementById("bikeRateHour").value);
-  const rateDay = parseInt(document.getElementById("bikeRateDay").value);
-  const emoji = document.getElementById("bikeEmoji").value || "🛵";
+  const name = bikeNameInput.value.trim();
+  const rateHour = parseInt(bikeRateHour.value);
+  const rateDay = parseInt(bikeRateDay.value);
+  const emoji = bikeEmoji.value.trim() || "🛵";
+  const imageUrl = document.getElementById("bikeImageUrlInput").value.trim();
 
   try {
-    const newBikeRef = push(ref(db, "bikes"));
-    await set(newBikeRef, {
+    const newRef = push(ref(db, "bikes"));
+    await set(newRef, {
       name,
       rateHour,
       rateDay,
       status: "available",
       imageEmoji: emoji,
-      imageUrl: "" // kosongkan, karena tidak ada upload foto
+      imageUrl: imageUrl || null
     });
 
     alert("✅ Motor berhasil ditambahkan!");
-    document.getElementById("addBikeForm").reset();
-    document.getElementById("addBikeModal").classList.remove("show");
+    addBikeForm.reset();
+    addBikeModal.classList.remove("show");
 
   } catch (err) {
-    alert("❌ Gagal menyimpan motor: " + err.message);
+    alert("❌ Error: " + err.message);
   }
 });
+
+const motors = [
+  {
+    name: "Honda Beat",
+    rateHour: 5000,
+    rateDay: 60000,
+    status: "available",
+    imageEmoji: "🛵",
+    imageUrl: "https://drive.google.com/uc?export=view&id=1u1h5-vU9BnHq1Akjt20Ps4inaYSb3G5R"
+  },
+  {
+    name: "Honda Vario 125",
+    rateHour: 7000,
+    rateDay: 70000,
+    status: "available",
+    imageEmoji: "🏍️",
+    imageUrl: "https://drive.google.com/uc?export=view&id=1CkSON7XRCYgSePAehDEJC_R7DzNK7TUL"
+  },
+  {
+    name: "Yamaha NMAX 155",
+    rateHour: 10000,
+    rateDay: 90000,
+    status: "available",
+    imageEmoji: "🛵",
+    imageUrl: "https://drive.google.com/uc?export=view&id=1U3p5eu2hZE0TNMLpPJpSd0QGwrYqzPGP"
+  }
+];
+
+motors.forEach(async data => {
+  const newRef = push(ref(db, "bikes"));
+  await set(newRef, data);
+  console.log("✅ Motor ditambahkan:", data.name);
+});
+
+
 
 </script>
 </body>
