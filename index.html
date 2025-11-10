@@ -47,7 +47,7 @@ footer {margin-top:20px;text-align:center;color:#666;}
 <body>
 <div class="container">
 <header>
-  <h1>Aplikasi Sewa Motor (Lokal)</h1>
+  <h1>Aplikasi Sewa Motor (Firebase)</h1>
   <div>
     <button id="adminBtn" class="btn"><i class="fa-solid fa-lock"></i> Admin</button>
     <button id="logoutBtn" class="btn" style="background:#777;display:none">Logout</button>
@@ -149,6 +149,7 @@ footer {margin-top:20px;text-align:center;color:#666;}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
 import { getDatabase, ref, set, get, push, update, onValue } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-storage.js";
 
 // Config Firebase
 const firebaseConfig = {
@@ -165,6 +166,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
+const storage = getStorage(app);
 
 window._firebase = {app, db, auth, provider};
 window.bikes = [];
@@ -350,27 +352,29 @@ document.getElementById("clearData").addEventListener("click",async()=>{
   }
 });
 
+
 // Add motor modal
 document.getElementById("addBike").addEventListener("click",()=>document.getElementById("addBikeModal").classList.add("show"));
 document.getElementById("cancelAddBike").addEventListener("click",()=>document.getElementById("addBikeModal").classList.remove("show"));
-document.getElementById("addBikeForm").addEventListener("submit",async e=>{
+document.getElementById("addBikeForm").addEventListener("submit", async e => {
   e.preventDefault();
-  const name=document.getElementById("bikeNameInput").value;
-  const rateHour=parseInt(document.getElementById("bikeRateHour").value);
-  const rateDay=parseInt(document.getElementById("bikeRateDay").value);
-  const emoji=document.getElementById("bikeEmoji").value||"🛵";
-  const id="b_"+Date.now();
-  const imageFile=document.getElementById("bikeImageInput").files[0];
-  let imageUrl="";
-  if(imageFile){
-    const storageRef = firebase.storage().ref().child('motor/'+id+'_'+imageFile.name);
-    await storageRef.put(imageFile);
-    imageUrl=await storageRef.getDownloadURL();
+  const name = document.getElementById("bikeNameInput").value;
+  const rateHour = parseInt(document.getElementById("bikeRateHour").value);
+  const rateDay = parseInt(document.getElementById("bikeRateDay").value);
+  const emoji = document.getElementById("bikeEmoji").value || "🛵";
+  const id = "b_" + Date.now();
+  const imageFile = document.getElementById("bikeImageInput").files[0];
+  let imageUrl = "";
+  if (imageFile) {
+    const storageRef = sRef(storage, 'motor/' + id + '_' + imageFile.name);
+    await uploadBytes(storageRef, imageFile);
+    imageUrl = await getDownloadURL(storageRef);
   }
-  await set(ref(db,"bikes/"+id),{name,rateHour,rateDay,status:"available",imageEmoji:emoji,imageUrl});
+  await set(ref(db, "bikes/" + id), { name, rateHour, rateDay, status: "available", imageEmoji: emoji, imageUrl });
   document.getElementById("addBikeModal").classList.remove("show");
   document.getElementById("addBikeForm").reset();
 });
+
 </script>
 </body>
 </html>
