@@ -340,6 +340,65 @@ logoutBtn.addEventListener("click",async ()=>{
   adminPanel.style.display="none";
 });
 
+
+// ===========================
+//  TAMBAH MOTOR – OPEN MODAL
+// ===========================
+const addBikeModal = document.getElementById("addBikeModal");
+const addBikeBtn = document.getElementById("addBike");
+const cancelAddBike = document.getElementById("cancelAddBike");
+const addBikeForm = document.getElementById("addBikeForm");
+
+addBikeBtn.addEventListener("click", () => {
+  addBikeModal.classList.add("show");
+});
+cancelAddBike.addEventListener("click", () => {
+  addBikeModal.classList.remove("show");
+  addBikeForm.reset();
+});
+
+// ===========================
+//  SIMPAN MOTOR BARU
+// ===========================
+addBikeForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const name = document.getElementById("bikeNameInput").value.trim();
+  const rateHour = parseInt(document.getElementById("bikeRateHour").value);
+  const rateDay = parseInt(document.getElementById("bikeRateDay").value);
+  const emoji = document.getElementById("bikeEmoji").value.trim();
+  const file = document.getElementById("bikeImageInput").files[0];
+
+  let imageUrl = null;
+
+  // Upload gambar jika ada
+  if (file) {
+    const imgRef = sRef(storage, "bikeImages/" + Date.now() + "_" + file.name);
+    await uploadBytes(imgRef, file);
+    imageUrl = await getDownloadURL(imgRef);
+  }
+
+  const newBikeRef = push(ref(db, "bikes"));
+  const newBikeData = {
+    id: newBikeRef.key,
+    name,
+    rateHour,
+    rateDay,
+    imageUrl,
+    imageEmoji: emoji,
+    status: "available"
+  };
+
+  await set(newBikeRef, newBikeData);
+
+  alert("Motor berhasil ditambahkan!");
+
+  addBikeForm.reset();
+  addBikeModal.classList.remove("show");
+});
+
+
+
 // Complete rental
 window.completeRental=async(id,bikeId)=>{
   const now=new Date().toISOString();
@@ -377,44 +436,6 @@ document.getElementById("clearData").addEventListener("click",async()=>{
   }
 });
 
-
-// Add motor modal
-document.getElementById("addBike").addEventListener("click",()=>document.getElementById("addBikeModal").classList.add("show"));
-document.getElementById("cancelAddBike").addEventListener("click",()=>document.getElementById("addBikeModal").classList.remove("show"));
-document.getElementById("addBikeForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  if (!window.isAdmin) return alert("Hanya admin bisa menambah motor!");
-
-  const name = document.getElementById("bikeNameInput").value.trim();
-  const rateHour = parseInt(document.getElementById("bikeRateHour").value, 10);
-  const rateDay = parseInt(document.getElementById("bikeRateDay").value, 10);
-  const emoji = document.getElementById("bikeEmoji").value.trim() || "🛵";
-  const file = document.getElementById("bikeImageInput").files[0];
-
-  if(!name || isNaN(rateHour) || isNaN(rateDay)) return alert("Mohon isi nama dan tarif dengan benar.");
-
-  let imageUrl = null;
-  if(file){
-    const storageRef = sRef(storage, `bikes/${Date.now()}_${file.name}`);
-    await uploadBytes(storageRef, file);
-    imageUrl = await getDownloadURL(storageRef);
-  }
-
-  const bikeData = {
-    name,
-    rateHour,
-    rateDay,
-    status: "available",
-    imageEmoji: emoji,
-    imageUrl: imageUrl,
-    createdAt: new Date().toISOString()
-  };
-
-  await push(ref(db, "bikes"), bikeData);
-  alert("✅ Motor berhasil ditambahkan!");
-  document.getElementById("addBikeForm").reset();
-  document.getElementById("addBikeModal").classList.remove("show");
-});
 
 
 </script>
