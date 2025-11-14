@@ -358,7 +358,7 @@ cancelAddBike.addEventListener("click", () => {
 });
 
 // ===========================
-//  SIMPAN MOTOR BARU
+//  SIMPAN MOTOR BARU (FULL WORKING)
 // ===========================
 addBikeForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -369,33 +369,36 @@ addBikeForm.addEventListener("submit", async (e) => {
   const emoji = document.getElementById("bikeEmoji").value.trim();
   const file = document.getElementById("bikeImageInput").files[0];
 
+  const bikeId = "bike_" + Date.now();
   let imageUrl = null;
 
-  // Upload gambar jika ada
+  // ===== UPLOAD GAMBAR KE STORAGE JIKA ADA =====
   if (file) {
-    const imgRef = sRef(storage, "bikeImages/" + Date.now() + "_" + file.name);
-    await uploadBytes(imgRef, file);
-    imageUrl = await getDownloadURL(imgRef);
+    const filePath = `bikes/${bikeId}_${file.name}`;
+    const storageReference = sRef(storage, filePath);
+    await uploadBytes(storageReference, file);
+    imageUrl = await getDownloadURL(storageReference);
   }
 
-  const newBikeRef = push(ref(db, "bikes"));
-  const newBikeData = {
-    id: newBikeRef.key,
+  // ===== SIMPAN DATA MOTOR KE REALTIME DB =====
+  const newBike = {
+    id: bikeId,
     name,
     rateHour,
     rateDay,
-    imageUrl,
     imageEmoji: emoji,
+    imageUrl: imageUrl || null,
     status: "available"
   };
 
-  await set(newBikeRef, newBikeData);
+  await set(ref(db, "bikes/" + bikeId), newBike);
 
-  alert("Motor berhasil ditambahkan!");
+  alert("Motor berhasil disimpan!");
 
-  addBikeForm.reset();
   addBikeModal.classList.remove("show");
+  addBikeForm.reset();
 });
+
 
 
 
