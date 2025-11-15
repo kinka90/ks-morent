@@ -237,6 +237,26 @@ function loadData(){
 }
 loadData();
 
+// Jika database masih kosong, tambahkan 1 motor default
+async function addDefaultBikeIfEmpty() {
+  const bikesRef = ref(db, "bikes");
+  const snap = await get(bikesRef);
+
+  if (!snap.exists()) {
+    const id = "bike_default_1";
+    await set(ref(db, "bikes/" + id), {
+      name: "Honda Beat 2024",
+      rateHour: 5000,
+      rateDay: 60000,
+      imageEmoji: "🛵",
+      status: "available"
+    });
+    console.log("✔ Motor default ditambahkan");
+  }
+}
+addDefaultBikeIfEmpty();
+
+
 // Sewa modal
 const rentModal=document.getElementById("rentModal");
 const rentForm=document.getElementById("rentForm");
@@ -367,43 +387,38 @@ addBikeForm.addEventListener("submit", async (e) => {
   const rateHour = parseInt(document.getElementById("bikeRateHour").value);
   const rateDay = parseInt(document.getElementById("bikeRateDay").value);
   const emoji = document.getElementById("bikeEmoji").value.trim();
-  const file = document.getElementById("bikeImageInput").files[0];
+  const imageFile = document.getElementById("bikeImageInput").files[0];
 
   if (!name || !rateHour || !rateDay) {
-    alert("Mohon lengkapi semua data motor!");
+    alert("Semua data wajib diisi!");
     return;
   }
 
-  // Generate ID motor
-  const newId = "m_" + Date.now();
-
+  // Buat ID unik
+  const newId = "bike_" + Date.now();
   let imageUrl = null;
 
-  // Jika ada gambar → upload ke Firebase Storage
-  if (file) {
-    const imageRef = sRef(storage, "bike_images/" + newId + ".jpg");
-    await uploadBytes(imageRef, file);
-    imageUrl = await getDownloadURL(imageRef);
+  // Upload gambar jika ada
+  if (imageFile) {
+    const imgRef = sRef(storage, "bike_images/" + newId);
+    await uploadBytes(imgRef, imageFile);
+    imageUrl = await getDownloadURL(imgRef);
   }
 
-  // Simpan data motor
+  // Simpan ke Firebase
   await set(ref(db, "bikes/" + newId), {
     name,
     rateHour,
     rateDay,
+    imageUrl,
     imageEmoji: emoji,
-    imageUrl: imageUrl || null,
     status: "available"
   });
 
   alert("Motor berhasil ditambahkan!");
-
   addBikeModal.classList.remove("show");
   addBikeForm.reset();
 });
-
-
-
 
 
 // Complete rental
