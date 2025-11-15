@@ -654,21 +654,17 @@
       }
 
       // ---------- Download PDF ----------
-      document.getElementById("downloadPdf").addEventListener("click", async () => {
-        const snap = await db.ref(RENTALS_PATH).once("value");
-        const rentals = snap.val();
-        if (!rentals) { alert("Belum ada data sewa."); return; }
-        const rows = Object.values(rentals).map(r => [
-          r.name, r.phone, r.bikeName, r.hours + " jam", "Rp " + numberWithDots(r.rateHour)+"/jam",
-          "Rp " + numberWithDots(r.total), r.startTime ? new Date(r.startTime).toLocaleString("id-ID",{dateStyle:"short",timeStyle:"short"}) : "-", r.endTime ? new Date(r.endTime).toLocaleString("id-ID",{dateStyle:"short",timeStyle:"short"}) : "-", r.returnTime ? new Date(r.returnTime).toLocaleString("id-ID",{dateStyle:"short",timeStyle:"short"}) : "-", r.status
-        ]);
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF("l", "pt", "a4");
-        doc.setFontSize(14);
-        doc.text("Buku Kas Sewa Motor - Halaman Admin", 40, 40);
-        doc.autoTable({ startY: 80, head: [["Nama","No HP","Motor","Durasi","Tarif","Total","Mulai","Selesai","Kembali","Status"]], body: rows, styles:{fontSize:9,cellPadding:4} });
-        doc.save("BukuKasSewaMotor.pdf");
-      });
+// Download PDF
+document.getElementById("downloadPdf").addEventListener("click",()=>{
+  const {jsPDF} = window.jspdf;
+  const doc=new jsPDF();
+  doc.text("Buku Kas Rental Motor",14,15);
+  const data=window.rentals.map(r=>[
+    r.name,r.phone,r.bikeName,r.hours,`Rp ${numberWithDots(r.rateHour)}`,`Rp ${numberWithDots(r.total)}`,r.startTime?r.startTime:"-",r.endTime?r.endTime:"-",r.returnTime?r.returnTime:"-",r.status
+  ]);
+  doc.autoTable({head:[["Nama","No HP","Motor","Durasi","Tarif","Total","Mulai","Selesai","Kembali","Status"]],body:data,startY:20});
+  doc.save("buku_kas.pdf");
+});
 
       // ---------- Reset data ----------
       document.getElementById("clearData").addEventListener("click", async () => {
@@ -738,3 +734,4 @@
     </script>
   </body>
 </html>
+
