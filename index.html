@@ -393,6 +393,10 @@ addBikeForm.addEventListener("submit", async (e) => {
 
   await set(ref(db, "bikes/" + bikeId), newBike);
 
+  // ✅ update lokal dan render ulang
+  window.bikes.push(newBike);
+  renderBikes();
+  
   alert("Motor berhasil disimpan!");
 
   addBikeModal.classList.remove("show");
@@ -444,3 +448,4 @@ document.getElementById("clearData").addEventListener("click",async()=>{
 </script>
 </body>
 </html>
+
