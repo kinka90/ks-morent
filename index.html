@@ -176,54 +176,6 @@ const motorGrid = document.getElementById("motorGrid");
 function numberWithDots(x){return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g,".");}
 
 
-/* ==============================================*/
-const sampleBikes = [
-  {
-    id: "bike1",
-    name: "Motor Bebas A",
-    rateHour: 5000,
-    rateDay: 60000,
-    status: "available",
-    imageEmoji: "🏍️",
-  },
-  {
-    id: "bike2",
-    name: "Motor Cepat B",
-    rateHour: 10000,
-    rateDay: 70000,
-    status: "available",
-    imageEmoji: "🛵",
-  }
-];
-
-/* ==============================================
-   CEK DATA MOTOR DI FIRESTORE
-   JIKA KOLEKSI 'bikes' MASIH KOSONG → BUAT SAMPLE
-================================================= */
-
-async function seedSampleBikes() {
-  const q = await getDocs(collection(db, "bikes"));
-
-  // jika sudah ada motor → jangan tambah lagi
-  if (!q.empty) {
-    console.log("✔ Koleksi bikes sudah ada, tidak perlu seed.");
-    return;
-  }
-
-  console.log("🚀 Koleksi kosong, menambahkan sampleBikes ke Firestore...");
-
-  for (let bike of sampleBikes) {
-    await setDoc(doc(db, "bikes", bike.id), bike);
-  }
-
-  console.log("✔ sampleBikes berhasil dimasukkan ke Firestore!");
-}
-
-/* JALANKAN SEED SAAT PERTAMA KALI */
-seedSampleBikes();
-
-/*==========================================*/  
-
   
 // Render motor
 function renderBikes(){
@@ -523,4 +475,5 @@ document.getElementById("clearData").addEventListener("click",async()=>{
 </script>
 </body>
 </html>
+
 
