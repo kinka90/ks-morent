@@ -716,6 +716,12 @@ async function viewDetails(id) {
   );
 }
 
+
+import {
+  getFirestore, collection, getDocs, getDoc, setDoc,
+  addDoc, updateDoc, deleteDoc, doc, onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
 // ---- Admin (Firebase) ----
 import {
   getAuth,
@@ -729,6 +735,9 @@ import {
   doc,
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut }
+  from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
 
 const adminPanel = document.getElementById("adminPanel");
@@ -782,24 +791,21 @@ onAuthStateChanged(auth, async (user) => {
 
 // === KLIK TOMBOL ADMIN: langsung login Firebase ===
 adminBtn.addEventListener("click", async () => {
-  const email = prompt("Masukkan email admin:");
-  const password = prompt("Masukkan password admin:");
-
-  if (!email || !password) return;
-
   try {
-    const res = await signInWithEmailAndPassword(auth, email, password);
-    const adminSnap = await getDoc(doc(db, "admin", res.user.uid));
+    const result = await signInWithPopup(auth, provider);
 
-    if (!adminSnap.exists()) {
-      alert("❌ Akun ini bukan admin.");
+    if (result.user.email === "kinkinka90@gmail.com") {
+      isAdmin = true;
+      document.getElementById("adminPanel").style.display = "block";
+      renderBikes();
+      alert("Login admin berhasil!");
+    } else {
+      alert("Anda bukan admin!");
       await signOut(auth);
-      return;
     }
-
-    alert("✅ Login berhasil!");
   } catch (err) {
-    alert("❌ Login gagal: " + err.message);
+    console.error(err);
+    alert("Login gagal");
   }
 });
 
