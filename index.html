@@ -358,6 +358,10 @@
   const auth = getAuth(app);
   const provider = new GoogleAuthProvider();
 
+  window._firebase = {app, db, auth, provider};
+  window.bikes = [];
+  window.rentals = [];
+
   ///-- Variabel Global (Versi Firebase) ---
   const BIKES_REF = collection(db, "bikes");
   const RENTALS_REF = collection(db, "rentals");
