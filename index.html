@@ -180,9 +180,8 @@ function numberWithDots(x){return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g,"
 // Render motor
 function renderBikes(){
   motorGrid.innerHTML="";
-    if (!window.bikes || window.bikes.length === 0) {
-    motorGrid.innerHTML = "<p class='small'>Memuat data motor...</p>";
-    return;
+    if (!window.bikes) return;
+
   }
   (window.bikes||[]).forEach(b=>{
     const card=document.createElement("div");
@@ -201,7 +200,7 @@ function renderBikes(){
       </div>`;
     motorGrid.appendChild(card);
   });
-}
+
 
 // Render tabel rental
 function renderRentalTable(){
@@ -235,10 +234,14 @@ function loadData(){
   onValue(bikesRef, snap => {
   const data = snap.val() || {};
   window.bikes = Object.entries(data).map(([id, val]) => ({ id, ...val }));
-      // Jika Firebase kosong, paksa tambah default
+  
+  setTimeout(() => {
+    renderBikes();
+}, 150);
+
+  // Jika Firebase kosong, paksa tambah default
   if (window.bikes.length === 0) {
     addDefaultBikeIfEmpty();
-    return;
   }
   console.log("🆕 Data motor diperbarui:", window.bikes.length, "item");
   renderBikes();
@@ -253,7 +256,7 @@ async function addDefaultBikeIfEmpty() {
   const bikesRef = ref(db, "bikes");
   const snap = await get(bikesRef);
 
-  if (!snap.exists()) {
+  if (!snap.exists() || Object.keys(snap.val()).length === 0) {
     const id = "bike_default_1";
     await set(ref(db, "bikes/" + id), {
       name: "Honda Beat 2024",
@@ -475,5 +478,4 @@ document.getElementById("clearData").addEventListener("click",async()=>{
 </script>
 </body>
 </html>
-
 
