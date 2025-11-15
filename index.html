@@ -121,22 +121,20 @@
       let currentBikeId = null;
 
       // ======= Authentication =======
-      adminBtn.addEventListener("click", async () => {
-        const email = prompt("Masukkan email admin");
-        const pass = prompt("Masukkan password");
-        try {
-          const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-          currentUser = userCredential.user;
-          if(currentUser.email === "kinkinka90@gmail.com") {
-            adminPanel.style.display = "block";
-            alert("Login admin berhasil");
-          } else {
-            alert("Bukan admin");
-          }
-        } catch(e) {
-          alert("Login gagal: " + e.message);
-        }
-      });
+// ======= Authentication Lokal =======
+const ADMIN_PASSWORD = "admin123"; // ganti sesuai keinginan
+const ADMIN_EMAIL = "admin@local.com"; // optional, bisa kosong
+
+adminBtn.addEventListener("click", () => {
+  const pass = prompt("Masukkan password admin:");
+  if(pass === ADMIN_PASSWORD){
+    adminPanel.style.display = "block";
+    alert("Login admin berhasil");
+  } else {
+    alert("Password salah!");
+  }
+});
+
 
       // ======= Render Motor =======
       const motorCol = collection(db, "motor");
