@@ -178,6 +178,10 @@ function numberWithDots(x){return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g,"
 // Render motor
 function renderBikes(){
   motorGrid.innerHTML="";
+    if (!window.bikes || window.bikes.length === 0) {
+    motorGrid.innerHTML = "<p class='small'>Memuat data motor...</p>";
+    return;
+  }
   (window.bikes||[]).forEach(b=>{
     const card=document.createElement("div");
     card.className="card";
@@ -229,6 +233,11 @@ function loadData(){
   onValue(bikesRef, snap => {
   const data = snap.val() || {};
   window.bikes = Object.entries(data).map(([id, val]) => ({ id, ...val }));
+      // Jika Firebase kosong, paksa tambah default
+  if (window.bikes.length === 0) {
+    addDefaultBikeIfEmpty();
+    return;
+  }
   console.log("🆕 Data motor diperbarui:", window.bikes.length, "item");
   renderBikes();
 });
@@ -248,13 +257,14 @@ async function addDefaultBikeIfEmpty() {
       name: "Honda Beat 2024",
       rateHour: 5000,
       rateDay: 60000,
-      imageEmoji: "🛵",
+      imageUrl: "https://i.imgur.com/bhQpZkQ.jpeg",  // LINK GAMBAR GOOGLE/IMGUR
       status: "available"
     });
+
     console.log("✔ Motor default ditambahkan");
   }
 }
-addDefaultBikeIfEmpty();
+
 
 
 // Sewa modal
