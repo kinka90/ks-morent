@@ -1,386 +1,740 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Aplikasi Sewa Motor - Lokal</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Aplikasi Sewa Motor - Firebase Realtime</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --bg: #f6f7fb;
+        --card: #fff;
+        --accent: #2b7a78;
+      }
+      body {
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto,
+          "Helvetica Neue", Arial;
+        background: var(--bg);
+        margin: 0;
+        padding: 20px;
+        color: #222;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0;
+      }
+      .btn {
+        background: var(--accent);
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-block;
+        cursor: pointer;
+        border: none;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 18px;
+      }
+      .card {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 12px;
+        box-shadow: 0 6px 18px rgba(20, 20, 60, 0.06);
+      }
+      .motor-img {
+        height: 140px;
+        border-radius: 8px;
+        background: linear-gradient(90deg, #e8f8f7, #f0f6ff);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        overflow: hidden;
+      }
+      .motor-img img { width:100%; height:100%; object-fit:cover; }
+      .meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+      }
+      .status {
+        padding: 6px 8px;
+        border-radius: 8px;
+        font-weight: 600;
+      }
+      .available {
+        background: #e6fff9;
+        color: #007a5f;
+      }
+      .rented {
+        background: #fff2f2;
+        color: #b90909;
+      }
+      .actions {
+        margin-top: 10px;
+        display: flex;
+        gap: 8px;
+      }
+      .small {
+        font-size: 13px;
+        color: #666;
+      }
+      .modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(10, 10, 20, 0.45);
+        z-index: 10;
+      }
+      .modal.show {
+        display: flex;
+      }
+      .dialog {
+        background: var(--card);
+        padding: 18px;
+        border-radius: 12px;
+        width: 420px;
+        box-shadow: 0 20px 60px rgba(10, 10, 40, 0.3);
+      }
+      label {
+        display: block;
+        margin-top: 10px;
+        font-size: 13px;
+      }
+      input[type="text"],
+      input[type="tel"],
+      input[type="number"],
+      select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        margin-top: 6px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+      .muted {
+        color: #666;
+        font-size: 13px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+      }
+      .admin-panel {
+        display: none;
+        margin-top: 18px;
+      }
+      footer {
+        margin-top: 20px;
+        text-align: center;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Aplikasi Sewa Motor (Firebase Realtime)</h1>
+        <div>
+          <button id="adminBtn" class="btn">
+            <i class="fa-solid fa-lock"></i> Admin
+          </button>
+        </div>
+      </header>
 
-<style>
-:root {
-  --bg:#f6f7fb;
-  --card:#fff;
-  --accent:#2b7a78;
-}
-body {
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-  background: var(--bg);
-  margin:0;
-  padding:20px;
-  color:#222;
-}
-.container {max-width:1100px;margin:0 auto;}
-header {display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
-h1 {font-size:20px;margin:0;}
-.btn {background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;display:inline-block;cursor:pointer;border:none;}
-.grid {display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;}
-.card {background:var(--card);border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(20,20,60,0.06);}
-.motor-img {height:140px;border-radius:8px;background:#eef;display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden;}
-.meta {display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
-.status {padding:6px 8px;border-radius:8px;font-weight:600;}
-.available {background:#e6fff9;color:#007a5f;}
-.rented {background:#fff2f2;color:#b90909;}
-.actions {margin-top:10px;display:flex;gap:8px;}
-.small {font-size:13px;color:#666;}
+      <section>
+        <p class="small">
+          Klik <strong>Sewa</strong> pada motor untuk membuka form pemesanan.
+          Status berubah otomatis setelah sewa — realtime via Firebase.
+        </p>
+        <div class="grid" id="motorGrid"></div>
+      </section>
 
-img.motor-photo {
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  border-radius:8px;
-  display:block;
-}
-</style>
-</head>
+      <!-- Modals and admin panel (same structure as original) -->
+      <div id="rentModal" class="modal">
+        <div class="dialog">
+          <h3 id="modalTitle">Form Sewa</h3>
+          <form id="rentForm">
+            <input type="hidden" id="bikeId" />
 
-<body>
-<div class="container">
+            <label>Nama penyewa</label>
+            <input id="name" type="text" required />
 
-<header>
-  <h1>Aplikasi Sewa Motor (Firebase)</h1>
-  <div>
-    <button id="adminBtn" class="btn"><i class="fa-solid fa-lock"></i> Admin</button>
-    <button id="logoutBtn" class="btn" style="background:#777;display:none">Logout</button>
-  </div>
-</header>
+            <label>No. HP</label>
+            <input id="phone" type="tel" pattern="[0-9+ ]*" required />
 
-<section>
-<p class="small">Klik <strong>Sewa</strong> pada motor untuk membuka form pemesanan.</p>
-<div class="grid" id="motorGrid"></div>
-</section>
+            <label>Durasi sewa (jam)</label>
+            <input id="hours" type="number" min="1" value="1" required />
 
-<script type="module">
-  // --------------------------
-  // Firebase Config
-  // --------------------------
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-  import {
-    getDatabase,
-    ref,
-    push,
-    set,
-    onValue,
-    update,
-    remove
-  } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+            <label>Tanggal & Waktu Mulai Sewa</label>
+            <input id="startDateTime" type="datetime-local" required />
+            <p class="muted" id="endDateTimePreview">Selesai sewa: -</p>
 
-  import {
-    getStorage,
-    ref as sRef,
-    uploadBytes,
-    getDownloadURL
-  } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyC5Nm7fc-L4ILl1yLqctvBkuiBr78jSzU4",
-    authDomain: "app-motor-1f954.firebaseapp.com",
-    databaseURL:
-      "https://app-motor-1f954-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "app-motor-1f954",
-    storageBucket: "app-motor-1f954.appspot.com",
-    messagingSenderId: "157881256704",
-    appId: "1:157881256704:web:8426ea3bd955a1dbc18064"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const storage = getStorage(app);
-
-  const motorRef = ref(db, "motor");
-  const rentalRef = ref(db, "rental");
-  const keuanganRef = ref(db, "keuangan");
-
-  // --------------------------
-  // TAMBAH MOTOR
-  // --------------------------
-  const addMotorForm = document.getElementById("addMotorForm");
-  const motorImage = document.getElementById("motorImage");
-
-  addMotorForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const nama = document.getElementById("nama").value;
-    const plat = document.getElementById("plat").value;
-    const harga = document.getElementById("harga").value;
-
-    let imageURL = "";
-
-    // ⛔ Pastikan file gambar dipilih
-    if (motorImage.files.length > 0) {
-      const file = motorImage.files[0];
-      const ext = file.name.split(".").pop();
-      const fileName = `bike_${Date.now()}.${ext}`;
-      const storageRef = sRef(storage, "motor/" + fileName);
-
-      await uploadBytes(storageRef, file);
-      imageURL = await getDownloadURL(storageRef);
-    }
-
-    // Simpan motor
-    const pushRef = push(motorRef);
-    await set(pushRef, {
-      id: pushRef.key,
-      nama,
-      plat,
-      harga,
-      image: imageURL,
-      status: "ready"
-    });
-
-    alert("Motor berhasil ditambahkan!");
-    addMotorForm.reset();
-    loadMotorAdmin();
-    loadMotorHome();
-  });
-
-
-  // -------------------------------------------------
-  // RENDER MOTOR DI ADMIN
-  // -------------------------------------------------
-  function loadMotorAdmin() {
-    onValue(motorRef, (snapshot) => {
-      const data = snapshot.val();
-      const list = document.getElementById("adminMotorList");
-      list.innerHTML = "";
-
-      if (!data) return;
-
-      Object.values(data).forEach((m) => {
-        list.innerHTML += `
-          <div class="admin-card">
-            <img src="${m.image}" onerror="this.src='https://via.placeholder.com/150'">
-            <div class="info">
-              <h3>${m.nama}</h3>
-              <p>Plat: ${m.plat}</p>
-              <p>Harga: Rp ${m.harga}/hari</p>
-              <p>Status: <b>${m.status}</b></p>
+            <label>Ketentuan</label>
+            <div class="row">
+              <label style="flex: 1"
+                ><input id="idKtp" type="checkbox" /> Memiliki KTP</label
+              >
+              <label style="flex: 1"
+                ><input id="idStudent" type="checkbox" /> Kartu Mahasiswa</label
+              >
             </div>
 
-            <button onclick="hapusMotor('${m.id}')">Hapus</button>
-          </div>
-        `;
-      });
-    });
-  }
+            <label>Tarif</label>
+            <select id="rateSelect">
+              <option value="5000|60000">
+                Standar — Rp 5.000 / jam • Rp 60.000 / 24 jam
+              </option>
+              <option value="10000|70000">
+                Premium — Rp 10.000 / jam • Rp 70.000 / 24 jam
+              </option>
+            </select>
 
-  window.hapusMotor = function (id) {
-    const ok = confirm("Hapus motor ini?");
-    if (!ok) return;
-    remove(ref(db, "motor/" + id));
-  };
+            <p class="muted" id="pricePreview">Total: Rp 5.000</p>
 
-  // -------------------------------------------------
-  // RENDER MOTOR DI HALAMAN HOME (UNTUK DISEWA)
-  // -------------------------------------------------
-  function loadMotorHome() {
-    onValue(motorRef, (snapshot) => {
-      const data = snapshot.val();
-      const homeList = document.getElementById("homeMotorList");
-      homeList.innerHTML = "";
-
-      if (!data) return;
-
-      Object.values(data).forEach((m) => {
-        if (m.status !== "ready") return;
-
-        homeList.innerHTML += `
-          <div class="card">
-            <img src="${m.image}" onerror="this.src='https://via.placeholder.com/150'">
-            <h3>${m.nama}</h3>
-            <p>Plat: ${m.plat}</p>
-            <p>Harga: Rp ${m.harga}/hari</p>
-            <button onclick="openSewaForm('${m.id}', '${m.nama}', '${m.harga}')">
-              Sewa
-            </button>
-          </div>
-        `;
-      });
-    });
-  }
-
-  // -------------------------------------------------
-  // BUKA FORM SEWA
-  // -------------------------------------------------
-  const sewaForm = document.getElementById("sewaForm");
-
-  window.openSewaForm = function (id, nama, harga) {
-    document.getElementById("sewaMotorId").value = id;
-    document.getElementById("sewaNamaMotor").innerText = nama;
-    document.getElementById("sewaHargaMotor").innerText = harga;
-    sewaForm.style.display = "block";
-  };
-
-  document.getElementById("closeSewa").onclick = () => {
-    sewaForm.style.display = "none";
-  };
-
-  // -------------------------------------------------
-  // SIMPAN DATA SEWA
-  // -------------------------------------------------
-  const formSewa = document.getElementById("formSewa");
-
-  formSewa.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const motorId = document.getElementById("sewaMotorId").value;
-    const penyewa = document.getElementById("penyewa").value;
-    const hari = parseInt(document.getElementById("hari").value);
-
-    const motorSnapshot = await (await ref(db, "motor/" + motorId)).get;
-
-    onValue(ref(db, "motor/" + motorId), async (snap2) => {
-      const motor = snap2.val();
-      if (!motor) return;
-
-      const total = hari * motor.harga;
-
-      const tambah = push(rentalRef);
-
-      await set(tambah, {
-        id: tambah.key,
-        motorId,
-        namaMotor: motor.nama,
-        penyewa,
-        hari,
-        harga: motor.harga,
-        total,
-        tanggal: new Date().toLocaleString(),
-        status: "berjalan"
-      });
-
-      await update(ref(db, "motor/" + motorId), {
-        status: "disewa"
-      });
-
-      alert("Transaksi berhasil disimpan!");
-
-      sewaForm.style.display = "none";
-      formSewa.reset();
-
-      loadMotorAdmin();
-      loadMotorHome();
-      loadRentalAdmin();
-    });
-  });
-
-  // -------------------------------------------------
-  // RENDER RENTAL DI ADMIN
-  // -------------------------------------------------
-  function loadRentalAdmin() {
-    onValue(rentalRef, (snapshot) => {
-      const data = snapshot.val();
-      const list = document.getElementById("adminRentalList");
-      list.innerHTML = "";
-
-      if (!data) return;
-
-      Object.values(data).forEach((r) => {
-        list.innerHTML += `
-          <div class="rental-card">
-            <div class="info">
-              <h3>${r.namaMotor}</h3>
-              <p>Penyewa: ${r.penyewa}</p>
-              <p>Lama: ${r.hari} hari</p>
-              <p>Total: Rp ${r.total}</p>
-              <p>Tanggal: ${r.tanggal}</p>
-              <p>Status: <b>${r.status}</b></p>
+            <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
+              <button type="button" id="closeModal" class="btn" style="background:#777">Batal</button>
+              <button type="submit" class="btn">Konfirmasi Sewa</button>
             </div>
+          </form>
+        </div>
+      </div>
 
-            ${
-              r.status === "berjalan"
-                ? `<button onclick="kembalikanMotor('${r.id}', '${r.motorId}', '${r.total}')">
-                     Kembalikan
-                   </button>`
-                : ""
-            }
-          </div>
-        `;
-      });
-    });
-  }
+      <div id="addBikeModal" class="modal">
+        <div class="dialog">
+          <h3>Tambah Motor Baru</h3>
+          <form id="addBikeForm">
+            <label>Gambar Motor (opsional)</label>
+            <input type="file" id="bikeImageInput" accept="image/*" />
 
-  // -------------------------------------------------
-  // PENGEMBALIAN MOTOR
-  // -------------------------------------------------
-  window.kembalikanMotor = async function (rentalId, motorId, total) {
-    const ok = confirm("Konfirmasi motor sudah kembali?");
-    if (!ok) return;
+            <label>Nama Motor</label>
+            <input type="text" id="bikeNameInput" required />
 
-    // update rental selesai
-    await update(ref(db, "rental/" + rentalId), {
-      status: "selesai",
-      selesaiPada: new Date().toLocaleString()
-    });
+            <label>Tarif per Jam (Rp)</label>
+            <input type="number" id="bikeRateHour" min="1000" required />
 
-    // motor menjadi ready lagi
-    await update(ref(db, "motor/" + motorId), {
-      status: "ready"
-    });
+            <label>Tarif per Hari (Rp)</label>
+            <input type="number" id="bikeRateDay" min="10000" required />
 
-    // catat keuangan
-    const hariIni = new Date().toISOString().split("T")[0];
-    const pushUang = push(ref(db, "keuangan/" + hariIni));
+            <label>Emoji / Ikon Motor</label>
+            <input type="text" id="bikeEmoji" placeholder="🛵 atau 🏍️" required />
 
-    await set(pushUang, {
-      id: pushUang.key,
-      masuk: total,
-      waktu: new Date().toLocaleString()
-    });
+            <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
+              <button type="button" id="cancelAddBike" class="btn" style="background:#777">Batal</button>
+              <button type="submit" class="btn">Simpan</button>
+            </div>
+          </form>
+        </div>
+      </div>
 
-    alert("Motor dikembalikan! Keuangan dicatat.");
+      <div class="admin-panel card" id="adminPanel">
+        <h3>Halaman Admin</h3>
+        <p class="small">Buku kas tersedia dalam format PDF — hanya untuk admin.</p>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button id="downloadPdf" class="btn"><i class="fa-solid fa-file-pdf"></i> Download Buku Kas (PDF)</button>
+          <button id="clearData" class="btn" style="background:#b03"><i class="fa-solid fa-trash"></i> Reset Data</button>
+          <button id="addBike" class="btn" style="background:#2b7a78"><i class="fa-solid fa-plus"></i> Tambah Motor</button>
+          <button id="reRegisterAdmin" class="btn" style="background:#444"><i class="fa-solid fa-user-pen"></i> Daftar Ulang Admin</button>
+        </div>
 
-    loadMotorAdmin();
-    loadRentalAdmin();
-    loadMotorHome();
-    loadKeuangan();
-  };
+        <h4>Riwayat Sewa</h4>
+        <div style="overflow:auto;max-height:320px">
+          <table id="rentalTable">
+            <thead>
+              <tr><th>Nama</th><th>No HP</th><th>Motor</th><th>Durasi</th><th>Tarif</th><th>Total</th><th>Mulai</th><th>Selesai</th><th>Kembalikan</th><th>Status</th><th>Aksi</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
 
-  // -------------------------------------------------
-  // RENDER KEUANGAN
-  // -------------------------------------------------
-  function loadKeuangan() {
-    onValue(keuanganRef, (snapshot) => {
-      const data = snapshot.val();
-      const list = document.getElementById("keuanganList");
-      list.innerHTML = "";
+      <footer>
+        Made for you — buka file <strong>index.html</strong> di browser (Chrome/Edge).
+      </footer>
+    </div>
 
-      if (!data) return;
+    <!-- Firebase SDKs (compat used for simpler migration) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
-      Object.entries(data).forEach(([tanggal, item]) => {
-        let totalHari = 0;
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
-        Object.values(item).forEach((x) => {
-          totalHari += parseInt(x.masuk);
+    <script>
+      /***********************************************
+       IMPORTANT:
+       Replace the firebaseConfig object below with your
+       Firebase project's config values. You can get them
+       from Firebase Console -> Project settings -> SDK.
+      ************************************************/
+      const firebaseConfig = {
+        apiKey:"AIzaSyB5uHlXqwLiAmsUeF4Qawsmv0iNRGRdi3c",
+        authDomain:"sewa-motor-ba94a.firebaseapp.com",
+        projectId:"sewa-motor-ba94a",
+        storageBucket:"sewa-motor-ba94a.appspot.com",
+        messagingSenderId:"921374655717",
+        appId:"1:921374655717:web:d7b21349675a530045c00c",
+        databaseURL:"https://sewa-motor-ba94a-default-rtdb.asia-southeast1.firebasedatabase.app/"
+      };
+
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.database();
+      const storage = firebase.storage();
+
+      // Realtime paths
+      const BIKES_PATH = "bikes";
+      const RENTALS_PATH = "rentals";
+
+      // Local UI refs
+      const motorGrid = document.getElementById("motorGrid");
+      const adminPanel = document.getElementById("adminPanel");
+
+      function numberWithDots(x) {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      }
+
+      // ---------- Realtime listeners ----------
+      function listenBikes() {
+        const ref = db.ref(BIKES_PATH);
+        ref.on("value", (snap) => {
+          const data = snap.val() || {};
+          renderBikes(Object.values(data));
         });
+      }
 
-        list.innerHTML += `
-          <div class="uang-card">
-            <h3>${tanggal}</h3>
-            <p>Total Pendapatan: <b>Rp ${totalHari}</b></p>
-          </div>
-        `;
+      function listenRentals() {
+        const ref = db.ref(RENTALS_PATH);
+        ref.on("value", (snap) => {
+          const data = snap.val() || {};
+          renderRentalTable(Object.values(data));
+        });
+      }
+
+      // Initial seed if empty
+      db.ref(BIKES_PATH).once("value").then(snap => {
+        if (!snap.exists()) {
+          const sample = {
+            bike1: { id: "bike1", name: "Motor Bebas A", rateHour: 5000, rateDay: 60000, status: "available", imageEmoji: "🏍️" },
+            bike2: { id: "bike2", name: "Motor Cepat B", rateHour: 10000, rateDay: 70000, status: "available", imageEmoji: "🛵" }
+          };
+          db.ref(BIKES_PATH).set(sample);
+        }
       });
-    });
-  }
 
-  // -----------------------------------------------
-  // Jalankan semua load
-  // -----------------------------------------------
-  loadMotorAdmin();
-  loadMotorHome();
-  loadRentalAdmin();
-  loadKeuangan();
-</script>
+      // ---------- Render bikes ----------
+      function renderBikes(bikes) {
+        motorGrid.innerHTML = "";
+        if (!bikes) return;
+        // Sort by name for stable order
+        bikes.sort((a,b)=> (a.name||"").localeCompare(b.name||""));
+        bikes.forEach((b) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <div class="motor-img">
+              ${b.imageUrl ? `<img src="${b.imageUrl}" alt="${b.name}">` : (b.imageEmoji || "🛵")}
+            </div>
+            <div style="margin-top:10px"><strong>${b.name}</strong></div>
+            <div class="meta">
+              <div class="small">Tarif: Rp ${numberWithDots(b.rateHour)}/jam</div>
+              <div class="status ${b.status === "available" ? "available" : "rented"}">
+                ${b.status === "available" ? "Available" : "Disewa"}
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn rentBtn" data-id="${b.id}" ${b.status !== "available" ? "disabled" : ""}>Sewa</button>
+              <button class="btn" style="background:#555" onclick="viewDetails('${b.id}')">Detail</button>
+              <button class="btn" style="background:#777" onclick="editBikePrompt('${b.id}')"><i class="fa-solid fa-pen"></i></button>
+              <button class="btn" style="background:#b03" onclick="deleteBike('${b.id}')"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          `;
+          motorGrid.appendChild(card);
+        });
+      }
 
-</body>
+      // ---------- Rent modal logic (similar to original) ----------
+      const rentModal = document.getElementById("rentModal");
+      const rentForm = document.getElementById("rentForm");
+      const pricePreview = document.getElementById("pricePreview");
+
+      function openRentModal(id) {
+        db.ref(BIKES_PATH + "/" + id).once("value").then(snap => {
+          const b = snap.val();
+          document.getElementById("bikeId").value = id;
+          document.getElementById("modalTitle").textContent = "Sewa: " + b.name;
+          document.getElementById("rateSelect").value = `${b.rateHour}|${b.rateDay}`;
+          document.getElementById("hours").value = 1;
+          updatePricePreview();
+          rentModal.classList.add("show");
+        });
+      }
+
+      function closeModal() {
+        rentModal.classList.remove("show");
+        rentForm.reset();
+      }
+
+      function updatePricePreview() {
+        const val = document.getElementById("rateSelect").value.split("|");
+        const hour = parseInt(val[0]);
+        const day = parseInt(val[1]);
+        let h = parseInt(document.getElementById("hours").value || 1);
+        if (h < 1) h = 1;
+        const days = Math.floor(h / 24), rem = h % 24;
+        const total = days * day + rem * hour;
+        pricePreview.textContent = `Total: Rp ${numberWithDots(total)}`;
+      }
+
+      document.getElementById("closeModal").addEventListener("click", closeModal);
+      document.getElementById("rateSelect").addEventListener("change", updatePricePreview);
+      document.getElementById("hours").addEventListener("input", updatePricePreview);
+
+      document.body.addEventListener("click", (e) => {
+        if (e.target.classList.contains("rentBtn")) openRentModal(e.target.dataset.id);
+      });
+
+      function updateEndDateTimePreview() {
+        const startInput = document.getElementById("startDateTime");
+        const hours = parseInt(document.getElementById("hours").value) || 1;
+        const endPreview = document.getElementById("endDateTimePreview");
+        if (!startInput.value) { endPreview.textContent = "Selesai sewa: -"; return; }
+        const startTime = new Date(startInput.value);
+        const endTime = new Date(startTime.getTime() + hours * 60 * 60 * 1000);
+        endPreview.textContent = "Selesai sewa: " + endTime.toLocaleString("id-ID", {dateStyle:"short", timeStyle:"short"});
+      }
+      document.getElementById("hours").addEventListener("input", updateEndDateTimePreview);
+      document.getElementById("startDateTime").addEventListener("change", updateEndDateTimePreview);
+
+      // ---------- Create rental (writes to realtime DB) ----------
+      rentForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const bikeId = document.getElementById("bikeId").value;
+        const name = document.getElementById("name").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const hours = parseInt(document.getElementById("hours").value);
+        const ktp = document.getElementById("idKtp").checked;
+        const student = document.getElementById("idStudent").checked;
+        if (!ktp && !student) {
+          alert("Harus memiliki KTP atau Kartu Mahasiswa!");
+          return;
+        }
+        const idDesc = ktp && student ? "KTP & Kartu Mahasiswa" : ktp ? "KTP" : "Kartu Mahasiswa";
+        const [rateHour, rateDay] = document.getElementById("rateSelect").value.split("|").map(Number);
+        const days = Math.floor(hours/24), rem = hours%24, total = days*rateDay + rem*rateHour;
+        const bikeRef = db.ref(BIKES_PATH + "/" + bikeId);
+        const bikeSnap = await bikeRef.once("value");
+        const bike = bikeSnap.val();
+        if (!bike) { alert("Motor tidak ditemukan."); return; }
+        if (bike.status !== "available") { alert("Motor sudah tidak tersedia."); return; }
+
+        // mark bike as rented
+        await bikeRef.update({ status: "rented" });
+
+        const startTime = document.getElementById("startDateTime").value;
+        const endTimeISO = new Date(new Date(startTime).getTime() + hours*60*60*1000).toISOString();
+        const newR = {
+          id: "r_" + Date.now(),
+          bikeId,
+          bikeName: bike.name,
+          name,
+          phone,
+          hours,
+          rateHour,
+          rateDay,
+          total,
+          date: new Date().toLocaleString("id-ID",{dateStyle:"short",timeStyle:"short"}),
+          startTime,
+          endTime: endTimeISO,
+          status: "Disewa",
+          idDesc
+        };
+
+        const newKey = db.ref(RENTALS_PATH).push().key;
+        const updates = {};
+        updates[RENTALS_PATH + "/" + newKey] = newR;
+        await db.ref().update(updates);
+
+        closeModal();
+
+        // send WA
+        const pesan =
+          `Halo ${name}, terima kasih telah menyewa *${bike.name}* 🛵\n\n` +
+          `📅 Mulai: ${new Date(startTime).toLocaleString("id-ID",{dateStyle:"short",timeStyle:"short"})}\n` +
+          `⏱ Durasi: ${hours} jam\n` +
+          `🕒 Selesai: ${new Date(endTimeISO).toLocaleString("id-ID",{dateStyle:"short",timeStyle:"short"})}\n` +
+          `💰 Total Bayar: Rp ${numberWithDots(total)}\n\n` +
+          `Mohon datang sesuai jadwal dan jaga kondisi motor dengan baik.`;
+        window.open(`https://wa.me/${phone.replace(/^0/,'62').replace(/\D/g,'')}?text=${encodeURIComponent(pesan)}`, "_blank");
+        alert("Sukses! Total bayar: Rp " + numberWithDots(total));
+      });
+
+      // ---------- Rental table rendering ----------
+      function renderRentalTable(rentals) {
+        const tbody = document.querySelector("#rentalTable tbody");
+        tbody.innerHTML = "";
+        if (!rentals) return;
+        rentals.sort((a,b)=> (b.date||"").localeCompare(a.date||""));
+        rentals.forEach((r) => {
+          const tr = document.createElement("tr");
+          let actionBtns = `
+            ${r.status === "Disewa" ? `<button class="btn" style="background:#2b7a78;padding:4px 8px" onclick="completeRental('${r.id}','${r.bikeId}')"><i class='fa-solid fa-check'></i> Selesai</button>` : ""}
+            <button class="btn" style="background:#777;padding:4px 8px" onclick="editRentalPrompt('${r.id}')"><i class='fa-solid fa-pen'></i></button>
+            <button class="btn" style="background:#b03;padding:4px 8px" onclick="deleteRental('${r.id}','${r.bikeId}')"><i class='fa-solid fa-trash'></i></button>
+          `;
+          tr.innerHTML = `
+            <td>${r.name}</td>
+            <td>${r.phone}</td>
+            <td>${r.bikeName}</td>
+            <td>${r.hours}</td>
+            <td>Rp ${numberWithDots(r.rateHour)}/jam</td>
+            <td>Rp ${numberWithDots(r.total)}</td>
+            <td>${r.startTime ? new Date(r.startTime).toLocaleString("id-ID",{dateStyle:"short",timeStyle:"short"}) : "-"}</td>
+            <td>${r.endTime ? new Date(r.endTime).toLocaleString("id-ID",{dateStyle:"short",timeStyle:"short"}) : "-"}</td>
+            <td>${r.returnTime || "-"}</td>
+            <td>${r.status}</td>
+            <td>${actionBtns}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // ---------- Edit / delete rentals ----------
+      async function editRentalPrompt(id) {
+        const rentalsSnap = await db.ref(RENTALS_PATH).orderByChild("id").equalTo(id).once("value");
+        const data = rentalsSnap.val();
+        if (!data) return alert("Data sewa tidak ditemukan.");
+        const key = Object.keys(data)[0];
+        const r = data[key];
+        const newHours = parseInt(prompt("Ubah durasi sewa (jam):", r.hours)) || r.hours;
+        const newRate = parseInt(prompt("Ubah tarif per jam (Rp):", r.rateHour)) || r.rateHour;
+        const days = Math.floor(newHours/24), rem = newHours%24;
+        const newTotal = days * r.rateDay + rem * newRate;
+        const updates = {};
+        updates[RENTALS_PATH + "/" + key + "/hours"] = newHours;
+        updates[RENTALS_PATH + "/" + key + "/rateHour"] = newRate;
+        updates[RENTALS_PATH + "/" + key + "/total"] = newTotal;
+        if (r.startTime) {
+          const newEnd = new Date(new Date(r.startTime).getTime() + newHours*60*60*1000).toISOString();
+          updates[RENTALS_PATH + "/" + key + "/endTime"] = newEnd;
+        }
+        await db.ref().update(updates);
+        alert("Data sewa berhasil diperbarui.");
+      }
+
+      async function deleteRental(id, bikeId) {
+        if (!confirm("Hapus transaksi ini?")) return;
+        const rentalsSnap = await db.ref(RENTALS_PATH).orderByChild("id").equalTo(id).once("value");
+        const data = rentalsSnap.val();
+        if (!data) return;
+        const key = Object.keys(data)[0];
+        await db.ref(RENTALS_PATH + "/" + key).remove();
+        // set bike available
+        await db.ref(BIKES_PATH + "/" + bikeId).update({ status: "available" });
+        alert("Transaksi dihapus.");
+      }
+
+      // ---------- Add bike (with Storage upload) ----------
+      document.getElementById("addBike").addEventListener("click", () => {
+        document.getElementById("addBikeModal").classList.add("show");
+      });
+      document.getElementById("cancelAddBike").addEventListener("click", () => {
+        document.getElementById("addBikeModal").classList.remove("show");
+      });
+
+      document.getElementById("addBikeForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const name = document.getElementById("bikeNameInput").value.trim();
+        const rateHour = parseInt(document.getElementById("bikeRateHour").value);
+        const rateDay = parseInt(document.getElementById("bikeRateDay").value);
+        const emoji = document.getElementById("bikeEmoji").value.trim() || "🛵";
+        const file = document.getElementById("bikeImageInput").files[0];
+        const newKey = db.ref(BIKES_PATH).push().key;
+        const newBike = { id: newKey, name, rateHour, rateDay, status: "available", imageEmoji: emoji };
+        if (file) {
+          const storageRef = storage.ref().child("images/" + newKey + "_" + file.name);
+          const snap = await storageRef.put(file);
+          const url = await snap.ref.getDownloadURL();
+          newBike.imageUrl = url;
+        }
+        const updates = {};
+        updates[BIKES_PATH + "/" + newKey] = newBike;
+        await db.ref().update(updates);
+        document.getElementById("addBikeModal").classList.remove("show");
+        document.getElementById("addBikeForm").reset();
+        alert("Motor baru berhasil ditambahkan!");
+      });
+
+      // ---------- Delete & edit bike ----------
+      async function deleteBike(id) {
+        if (!confirm("Yakin ingin menghapus motor ini?")) return;
+        await db.ref(BIKES_PATH + "/" + id).remove();
+        alert("Motor berhasil dihapus.");
+      }
+
+      async function editBikePrompt(id) {
+        const bikeSnap = await db.ref(BIKES_PATH + "/" + id).once("value");
+        const bike = bikeSnap.val();
+        if (!bike) return alert("Motor tidak ditemukan!");
+        const newName = prompt("Nama motor baru:", bike.name);
+        if (newName === null) return;
+        const newRateHourInput = prompt("Tarif per jam baru:", bike.rateHour);
+        if (newRateHourInput === null) return;
+        const newRateHour = parseInt(newRateHourInput);
+        const newRateDayInput = prompt("Tarif per hari baru:", bike.rateDay);
+        if (newRateDayInput === null) return;
+        const newRateDay = parseInt(newRateDayInput);
+        if (isNaN(newRateHour) || isNaN(newRateDay)) return alert("Tarif harus angka!");
+        const updates = {};
+        updates[BIKES_PATH + "/" + id + "/name"] = newName.trim() || bike.name;
+        updates[BIKES_PATH + "/" + id + "/rateHour"] = newRateHour;
+        updates[BIKES_PATH + "/" + id + "/rateDay"] = newRateDay;
+        await db.ref().update(updates);
+
+        // optional: prompt to change image
+        if (confirm("Ingin mengganti gambar motor?")) {
+          const input = document.createElement("input");
+          input.type = "file"; input.accept = "image/*";
+          input.onchange = async (e) => {
+            const f = e.target.files[0];
+            if (!f) return alert("Tidak ada file dipilih.");
+            const storageRef = storage.ref().child("images/" + id + "_" + f.name);
+            const snap = await storageRef.put(f);
+            const url = await snap.ref.getDownloadURL();
+            await db.ref(BIKES_PATH + "/" + id).update({ imageUrl: url });
+            alert("Gambar berhasil diupload.");
+          };
+          input.click();
+        }
+
+        alert("Tarif & nama motor berhasil diperbarui.");
+      }
+
+      // ---------- Complete rental ----------
+      async function completeRental(id, bikeId) {
+        const rentalsSnap = await db.ref(RENTALS_PATH).orderByChild("id").equalTo(id).once("value");
+        const data = rentalsSnap.val();
+        if (!data) return alert("Data sewa tidak ditemukan.");
+        const key = Object.keys(data)[0];
+        const r = data[key];
+        const returnTime = new Date().toISOString();
+        await db.ref(RENTALS_PATH + "/" + key).update({ status: "Selesai", returnTime });
+        await db.ref(BIKES_PATH + "/" + bikeId).update({ status: "available" });
+        alert("Penyewaan telah diselesaikan.");
+      }
+
+      // ---------- Download PDF ----------
+      document.getElementById("downloadPdf").addEventListener("click", async () => {
+        const snap = await db.ref(RENTALS_PATH).once("value");
+        const rentals = snap.val();
+        if (!rentals) { alert("Belum ada data sewa."); return; }
+        const rows = Object.values(rentals).map(r => [
+          r.name, r.phone, r.bikeName, r.hours + " jam", "Rp " + numberWithDots(r.rateHour)+"/jam",
+          "Rp " + numberWithDots(r.total), r.startTime ? new Date(r.startTime).toLocaleString("id-ID",{dateStyle:"short",timeStyle:"short"}) : "-", r.endTime ? new Date(r.endTime).toLocaleString("id-ID",{dateStyle:"short",timeStyle:"short"}) : "-", r.returnTime ? new Date(r.returnTime).toLocaleString("id-ID",{dateStyle:"short",timeStyle:"short"}) : "-", r.status
+        ]);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF("l", "pt", "a4");
+        doc.setFontSize(14);
+        doc.text("Buku Kas Sewa Motor - Halaman Admin", 40, 40);
+        doc.autoTable({ startY: 80, head: [["Nama","No HP","Motor","Durasi","Tarif","Total","Mulai","Selesai","Kembali","Status"]], body: rows, styles:{fontSize:9,cellPadding:4} });
+        doc.save("BukuKasSewaMotor.pdf");
+      });
+
+      // ---------- Reset data ----------
+      document.getElementById("clearData").addEventListener("click", async () => {
+        if (!confirm("Yakin ingin menghapus seluruh buku kas dan mengembalikan semua motor ke Available?")) return;
+        // delete rentals and set bikes to available
+        const bikesSnap = await db.ref(BIKES_PATH).once("value");
+        const bikes = bikesSnap.val() || {};
+        Object.keys(bikes).forEach(k => bikes[k].status = "available");
+        await db.ref(BIKES_PATH).set(bikes);
+        await db.ref(RENTALS_PATH).set(null);
+        alert("Semua data sewa dihapus dan semua motor dikembalikan ke status Available.");
+      });
+
+      // ---------- Admin simple password (local) ----------
+      const SHARED_PASSWORD = "motorsatu123";
+      document.getElementById("adminBtn").addEventListener("click", () => {
+        if (localStorage.getItem("sharedPasswordLoggedIn")) {
+          alert("⚙️ Sudah login sebagai admin.");
+          adminPanel.style.display = "block";
+          renderLogoutButton(true);
+          return;
+        }
+        const pass = prompt("Masukkan password admin:");
+        if (pass === SHARED_PASSWORD) {
+          alert("✅ Login berhasil!");
+          localStorage.setItem("sharedPasswordLoggedIn", "true");
+          adminPanel.style.display = "block";
+          renderLogoutButton(true);
+        } else {
+          alert("❌ Password salah!");
+        }
+      });
+
+      function renderLogoutButton(show) {
+        let logoutBtn = document.getElementById("logoutBtn");
+        if (show) {
+          if (!logoutBtn) {
+            logoutBtn = document.createElement("button");
+            logoutBtn.id = "logoutBtn";
+            logoutBtn.className = "btn";
+            logoutBtn.style.background = "#555";
+            logoutBtn.style.marginLeft = "10px";
+            logoutBtn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Logout';
+            logoutBtn.onclick = () => {
+              localStorage.removeItem("sharedPasswordLoggedIn");
+              adminPanel.style.display = "none";
+              logoutBtn.remove();
+              alert("Anda berhasil logout.");
+            };
+            document.querySelector("header").appendChild(logoutBtn);
+          }
+        } else if (logoutBtn) logoutBtn.remove();
+      }
+
+      // ---------- Utility: view details ----------
+      async function viewDetails(id) {
+        const snap = await db.ref(BIKES_PATH + "/" + id).once("value");
+        const b = snap.val();
+        if (!b) return alert("Motor tidak ditemukan.");
+        alert(`${b.name}\nTarif: Rp ${numberWithDots(b.rateHour)}/jam • Rp ${numberWithDots(b.rateDay)}/24 jam\nStatus: ${b.status}`);
+      }
+
+      // ---------- Start listeners ----------
+      listenBikes();
+      listenRentals();
+
+    </script>
+  </body>
 </html>
