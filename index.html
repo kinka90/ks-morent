@@ -1,73 +1,345 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sewa Motor - Demo</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body class="bg-light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Aplikasi Sewa Motor - Lokal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+      :root { --bg:#f6f7fb; --card:#fff; --accent:#2b7a78; }
+      body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; background: var(--bg); margin:0; padding:20px; color:#222; }
+      .container { max-width:1100px; margin:0 auto; }
+      header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+      h1 { font-size:20px; margin:0; }
+      .btn { background:var(--accent); color:#fff; padding:8px 12px; border-radius:8px; text-decoration:none; display:inline-block; cursor:pointer; border:none; }
+      .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:18px; }
+      .card { background:var(--card); border-radius:12px; padding:12px; box-shadow:0 6px 18px rgba(20,20,60,0.06); }
+      .motor-img { height:140px; border-radius:8px; background:linear-gradient(90deg,#e8f8f7,#f0f6ff); display:flex; align-items:center; justify-content:center; font-size:48px; }
+      .meta { display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
+      .status { padding:6px 8px; border-radius:8px; font-weight:600; }
+      .available { background:#e6fff9; color:#007a5f; }
+      .rented { background:#fff2f2; color:#b90909; }
+      .actions { margin-top:10px; display:flex; gap:8px; }
+      .small { font-size:13px; color:#666; }
+      .modal { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(10,10,20,0.45); z-index:10; }
+      .modal.show { display:flex; }
+      .dialog { background:var(--card); padding:18px; border-radius:12px; width:420px; box-shadow:0 20px 60px rgba(10,10,40,0.3); }
+      label { display:block; margin-top:10px; font-size:13px; }
+      input[type="text"], input[type="tel"], input[type="number"], select { width:100%; padding:8px; border-radius:8px; border:1px solid #ddd; margin-top:6px; }
+      .row { display:flex; gap:8px; }
+      .muted { color:#666; font-size:13px; }
+      table { width:100%; border-collapse:collapse; }
+      th, td { padding:8px; border-bottom:1px solid #eee; text-align:left; }
+      .admin-panel { display:none; margin-top:18px; }
+      footer { margin-top:20px; text-align:center; color:#666; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Aplikasi Sewa Motor (Lokal)</h1>
+        <button id="adminBtn" class="btn"><i class="fa-solid fa-lock"></i> Admin</button>
+      </header>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-  <div class="container">
-    <a class="navbar-brand" href="#">Sewa Motor</a>
-    <div>
-      <a class="btn btn-outline-light btn-sm" href="admin.html">Admin</a>
-    </div>
-  </div>
-</nav>
+      <section>
+        <p class="small">
+          Klik <strong>Sewa</strong> pada motor untuk membuka form pemesanan. Status berubah otomatis setelah sewa.
+        </p>
+        <div class="grid" id="motorGrid"></div>
+      </section>
 
-<div class="container py-4">
-  <h3 class="mb-3">Daftar Motor</h3>
-  <div id="motorList" class="row g-3"></div>
-</div>
-
-<!-- Modal: Form Sewa -->
-<div class="modal fade" id="rentModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <form id="rentForm" class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Form Penyewaan</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <!-- Modal Sewa -->
+      <div id="rentModal" class="modal">
+        <div class="dialog">
+          <h3 id="modalTitle">Form Sewa</h3>
+          <form id="rentForm">
+            <input type="hidden" id="bikeId" />
+            <label>Nama penyewa</label>
+            <input id="name" type="text" required />
+            <label>No. HP</label>
+            <input id="phone" type="tel" pattern="[0-9+ ]*" required />
+            <label>Durasi sewa (jam)</label>
+            <input id="hours" type="number" min="1" value="1" required />
+            <label>Tanggal & Waktu Mulai Sewa</label>
+            <input id="startDateTime" type="datetime-local" required />
+            <p class="muted" id="endDateTimePreview">Selesai sewa: -</p>
+            <label>Ketentuan</label>
+            <div class="row">
+              <label style="flex:1"><input id="idKtp" type="checkbox" /> Memiliki KTP</label>
+              <label style="flex:1"><input id="idStudent" type="checkbox" /> Kartu Mahasiswa</label>
+            </div>
+            <label>Tarif</label>
+            <select id="rateSelect">
+              <option value="5000|60000">Standar — Rp 5.000 / jam • Rp 60.000 / 24 jam</option>
+              <option value="10000|70000">Premium — Rp 10.000 / jam • Rp 70.000 / 24 jam</option>
+            </select>
+            <p class="muted" id="pricePreview">Total: Rp 5.000</p>
+            <div style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end;">
+              <button type="button" id="closeModal" class="btn" style="background:#777">Batal</button>
+              <button type="submit" class="btn">Konfirmasi Sewa</button>
+            </div>
+          </form>
+        </div>
       </div>
-      <div class="modal-body">
-        <input type="hidden" id="motorId">
-        <div class="mb-2">
-          <label class="form-label">Nama Penyewa</label>
-          <input type="text" id="renterName" class="form-control" required>
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Kontak/HP</label>
-          <input type="tel" id="renterPhone" class="form-control" required>
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Mulai Sewa</label>
-          <input type="datetime-local" id="startAt" class="form-control" required>
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Akhir Sewa</label>
-          <input type="datetime-local" id="endAt" class="form-control" required>
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Harga per Jam (Rp)</label>
-          <input type="number" id="pricePerHour" class="form-control" value="5000" required>
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Estimasi Harga (Rp)</label>
-          <input type="text" id="estPrice" class="form-control" readonly>
-        </div>
-        <div class="form-text">Notifikasi WhatsApp akan dibuka setelah konfirmasi untuk mengirim rincian ke penyewa.</div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Batal</button>
-        <button class="btn btn-primary" type="submit">Konfirmasi & Sewa</button>
-      </div>
-    </form>
-  </div>
-</div>
 
-<script type="module" src="./script.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+      <!-- Admin Panel -->
+      <div class="admin-panel card" id="adminPanel">
+        <h3>Halaman Admin</h3>
+        <div style="display:flex; gap:8px; margin-bottom:8px">
+          <button id="addBike" class="btn" style="background:#2b7a78"><i class="fa-solid fa-plus"></i> Tambah Motor</button>
+        </div>
+      </div>
+
+    <script type="module">
+      // ======= Firebase Setup =======
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+      import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+      import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "API_KEY_ANDA",
+        authDomain: "PROJECT_ID.firebaseapp.com",
+        projectId: "PROJECT_ID",
+        storageBucket: "PROJECT_ID.appspot.com",
+        messagingSenderId: "SENDER_ID",
+        appId: "APP_ID"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const auth = getAuth(app);
+
+      // ======= DOM =======
+      const motorGrid = document.getElementById("motorGrid");
+      const rentModal = document.getElementById("rentModal");
+      const adminBtn = document.getElementById("adminBtn");
+      const adminPanel = document.getElementById("adminPanel");
+      const closeModal = document.getElementById("closeModal");
+      const rentForm = document.getElementById("rentForm");
+
+      let currentUser = null;
+      let currentBikeId = null;
+
+      // ======= Authentication =======
+// ======= Authentication Lokal =======
+const ADMIN_PASSWORD = "admin123"; // ganti sesuai keinginan
+const ADMIN_EMAIL = "admin@local.com"; // optional, bisa kosong
+
+adminBtn.addEventListener("click", () => {
+  const pass = prompt("Masukkan password admin:");
+  if(pass === ADMIN_PASSWORD){
+    adminPanel.style.display = "block";
+    alert("Login admin berhasil");
+  } else {
+    alert("Password salah!");
+  }
+});
+
+
+
+
+      // ======= Render Motor =======
+      const motorCol = collection(db, "motor");
+
+      const renderMotors = async () => {
+        motorGrid.innerHTML = "";
+        const querySnapshot = await getDocs(motorCol);
+        querySnapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <div class="motor-img"><i class="fa-solid fa-motorcycle"></i></div>
+            <h4>${data.name}</h4>
+            <div class="meta">
+              <span class="status ${data.status === "available" ? "available" : "rented"}">${data.status}</span>
+              <span class="small">${data.rate24 ? "Rp "+data.rate24+"/24 jam" : ""}</span>
+            </div>
+            <div class="actions">
+              <button class="btn rentBtn" data-id="${docSnap.id}" ${data.status==="rented"?"disabled":""}>Sewa</button>
+            </div>
+          `;
+          motorGrid.appendChild(card);
+        });
+        attachRentEvents();
+      };
+
+      // ======= Rent Button =======
+      const attachRentEvents = () => {
+        document.querySelectorAll(".rentBtn").forEach(btn => {
+          btn.addEventListener("click", e => {
+            currentBikeId = e.target.dataset.id;
+            rentModal.classList.add("show");
+          });
+        });
+      };
+
+      closeModal.addEventListener("click", () => {
+        rentModal.classList.remove("show");
+        rentForm.reset();
+        document.getElementById("endDateTimePreview").textContent = "Selesai sewa: -";
+        document.getElementById("pricePreview").textContent = "Total: Rp 0";
+      });
+
+      // ======= Update Preview =======
+      const hoursInput = document.getElementById("hours");
+      const startInput = document.getElementById("startDateTime");
+      const rateSelect = document.getElementById("rateSelect");
+      const endPreview = document.getElementById("endDateTimePreview");
+      const pricePreview = document.getElementById("pricePreview");
+
+      const updatePreview = () => {
+        const start = new Date(startInput.value);
+        const hours = parseInt(hoursInput.value || 1);
+        if(!isNaN(start.getTime())) {
+          const end = new Date(start.getTime() + hours*60*60*1000);
+          endPreview.textContent = "Selesai sewa: " + end.toLocaleString();
+        }
+        const rates = rateSelect.value.split("|");
+        const total = hours <= 24 ? parseInt(rates[0])*hours : parseInt(rates[1]);
+        pricePreview.textContent = "Total: Rp " + total.toLocaleString();
+      };
+
+      hoursInput.addEventListener("input", updatePreview);
+      startInput.addEventListener("input", updatePreview);
+      rateSelect.addEventListener("change", updatePreview);
+
+      // ======= Submit Rent =======
+      rentForm.addEventListener("submit", async e => {
+        e.preventDefault();
+        if(!currentBikeId) return;
+        const name = document.getElementById("name").value;
+        const phone = document.getElementById("phone").value;
+        const hours = parseInt(hoursInput.value);
+        const start = new Date(startInput.value);
+        const rates = rateSelect.value.split("|");
+        const total = hours <= 24 ? parseInt(rates[0])*hours : parseInt(rates[1]);
+
+        try {
+          await updateDoc(doc(db, "motor", currentBikeId), {
+            status: "rented",
+            renter: { name, phone, hours, start: start.toISOString(), total }
+          });
+          alert("Motor berhasil disewa");
+          rentModal.classList.remove("show");
+          rentForm.reset();
+          renderMotors();
+        } catch(err) {
+          alert("Error: "+err.message);
+        }
+      });
+
+      // ======= Real-time Update =======
+      onSnapshot(motorCol, renderMotors);
+
+      // ======= Initial Render =======
+      renderMotors();
+    </script>
+  </body>
 </html>
+
+
+    <script type="module">
+      // ======= DOM Admin =======
+      const addMotorBtn = document.getElementById("addMotorBtn");
+      const motorNameInput = document.getElementById("motorName");
+      const rate24Input = document.getElementById("rate24");
+      const rateFullInput = document.getElementById("rateFull");
+      const saveMotorBtn = document.getElementById("saveMotorBtn");
+      const motorListAdmin = document.getElementById("motorListAdmin");
+
+      // ======= Render Admin Motor List =======
+      const renderAdminMotors = async () => {
+        motorListAdmin.innerHTML = "";
+        const querySnapshot = await getDocs(motorCol);
+        querySnapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${data.name}</td>
+            <td>Rp ${data.rate24?.toLocaleString()}</td>
+            <td>Rp ${data.rateFull?.toLocaleString()}</td>
+            <td>${data.status}</td>
+            <td>
+              <button class="editBtn" data-id="${docSnap.id}">Edit</button>
+              <button class="deleteBtn" data-id="${docSnap.id}">Hapus</button>
+              ${data.status === "rented" ? `<button class="returnBtn" data-id="${docSnap.id}">Kembali</button>` : ""}
+            </td>
+          `;
+          motorListAdmin.appendChild(tr);
+        });
+        attachAdminEvents();
+      };
+
+      // ======= Admin Actions =======
+      const attachAdminEvents = () => {
+        document.querySelectorAll(".editBtn").forEach(btn => {
+          btn.addEventListener("click", async e => {
+            const id = e.target.dataset.id;
+            const docRef = doc(db, "motor", id);
+            const docSnap = await getDocs(motorCol);
+            const data = (await getDocs(docRef)).data();
+            motorNameInput.value = data.name;
+            rate24Input.value = data.rate24;
+            rateFullInput.value = data.rateFull;
+            saveMotorBtn.dataset.id = id;
+          });
+        });
+
+        document.querySelectorAll(".deleteBtn").forEach(btn => {
+          btn.addEventListener("click", async e => {
+            const id = e.target.dataset.id;
+            if(confirm("Hapus motor ini?")) {
+              await deleteDoc(doc(db, "motor", id));
+              renderAdminMotors();
+              renderMotors();
+            }
+          });
+        });
+
+        document.querySelectorAll(".returnBtn").forEach(btn => {
+          btn.addEventListener("click", async e => {
+            const id = e.target.dataset.id;
+            if(confirm("Kembalikan motor ini ke status tersedia?")) {
+              await updateDoc(doc(db, "motor", id), { status: "available", renter: {} });
+              renderAdminMotors();
+              renderMotors();
+            }
+          });
+        });
+      };
+
+      // ======= Add/Save Motor =======
+      addMotorBtn.addEventListener("click", () => {
+        motorNameInput.value = "";
+        rate24Input.value = "";
+        rateFullInput.value = "";
+        saveMotorBtn.removeAttribute("data-id");
+      });
+
+      saveMotorBtn.addEventListener("click", async () => {
+        const name = motorNameInput.value;
+        const rate24 = parseInt(rate24Input.value);
+        const rateFull = parseInt(rateFullInput.value);
+        const id = saveMotorBtn.dataset.id;
+
+        if(!name || isNaN(rate24) || isNaN(rateFull)) return alert("Isi semua data!");
+
+        if(id) {
+          // Update motor
+          await updateDoc(doc(db, "motor", id), { name, rate24, rateFull });
+        } else {
+          // Add motor
+          await addDoc(motorCol, { name, rate24, rateFull, status: "available" });
+        }
+
+        renderAdminMotors();
+        renderMotors();
+        motorNameInput.value = "";
+        rate24Input.value = "";
+        rateFullInput.value = "";
+      });
+
+      // ======= Initial Admin Render =======
+      renderAdminMotors();
+    </script>
