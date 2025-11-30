@@ -2,438 +2,72 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Aplikasi Sewa Motor — Demo (Diperbaiki)</title>
-  <!-- Bootstrap CDN -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- FontAwesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <!-- jsPDF for PDF export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    body{padding:20px;background:#f8f9fa}
-    .motor-card{min-height:160px}
-    .badge-rented{background:#dc3545}
-    .badge-available{background:#198754}
-  </style>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sewa Motor - Demo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
-<div class="container">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Aplikasi Sewa Motor</h2>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container">
+    <a class="navbar-brand" href="#">Sewa Motor</a>
     <div>
-      <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#loginModal">Admin Login</button>
-      <button id="btnAdminPanel" class="btn btn-primary d-none">Admin Panel</button>
+      <a class="btn btn-outline-light btn-sm" href="admin.html">Admin</a>
     </div>
   </div>
+</nav>
 
-  <!-- User View: List of Motors -->
-  <div class="row" id="motorList"></div>
-
-  <!-- Booking Modal -->
-  <div class="modal fade" id="bookingModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Form Penyewaan</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <form id="bookingForm">
-            <input type="hidden" id="motorId">
-            <div class="mb-3">
-              <label class="form-label">Nama Penyewa</label>
-              <input id="renterName" class="form-control" required>
-            </div>
-            <div class="mb-3 row">
-              <div class="col">
-                <label class="form-label">Mulai Sewa</label>
-                <input id="startDate" type="datetime-local" class="form-control" required>
-              </div>
-              <div class="col">
-                <label class="form-label">Selesai Sewa</label>
-                <input id="endDate" type="datetime-local" class="form-control" required>
-              </div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Tarif (per jam)</label>
-              <input id="ratePerHour" type="number" class="form-control" readonly>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Total Harga</label>
-              <input id="totalPrice" class="form-control" readonly>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Catatan (opsional)</label>
-              <textarea id="note" class="form-control"></textarea>
-            </div>
-
-            <div class="d-flex justify-content-between">
-              <button type="button" id="btnSendWhatsApp" class="btn btn-success">Kirim via WhatsApp</button>
-              <button type="submit" class="btn btn-primary">Buat Pesanan</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Admin Panel -->
-  <div id="adminPanel" class="mt-4 d-none">
-    <h4>Admin - Kelola</h4>
-    <div class="mb-3">
-      <button id="refreshBtn" class="btn btn-secondary me-2">Refresh</button>
-      <button id="exportPdfBtn" class="btn btn-outline-danger">Export Buku Kas ke PDF</button>
-    </div>
-    <div class="row">
-      <div class="col-md-8">
-        <h5>Daftar Booking</h5>
-        <div id="bookingList"></div>
-      </div>
-      <div class="col-md-4">
-        <h5>Buku Kas (Admin Only)</h5>
-        <form id="bukuKasForm" class="mb-3">
-          <div class="mb-2">
-            <input id="bkDate" type="date" class="form-control" required>
-          </div>
-          <div class="mb-2">
-            <input id="bkDesc" placeholder="Deskripsi" class="form-control" required>
-          </div>
-          <div class="mb-2">
-            <input id="bkAmount" type="number" placeholder="Jumlah (positif=masuk, negatif=keluar)" class="form-control" required>
-          </div>
-          <button class="btn btn-primary">Tambah Buku Kas</button>
-        </form>
-        <div id="bukuKasList" style="max-height:400px;overflow:auto"></div>
-      </div>
-    </div>
-  </div>
-
+<div class="container py-4">
+  <h3 class="mb-3">Daftar Motor</h3>
+  <div id="motorList" class="row g-3"></div>
 </div>
 
-<!-- Login Modal -->
-<div class="modal fade" id="loginModal" tabindex="-1">
+<!-- Modal: Form Sewa -->
+<div class="modal fade" id="rentModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header"><h5>Admin Login</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        <form id="loginForm">
-          <div class="mb-2"><input id="adminEmail" type="email" class="form-control" placeholder="email admin" required></div>
-          <div class="mb-2"><input id="adminPass" type="password" class="form-control" placeholder="password" required></div>
-          <button class="btn btn-primary">Login</button>
-        </form>
+    <form id="rentForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Form Penyewaan</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-    </div>
+      <div class="modal-body">
+        <input type="hidden" id="motorId">
+        <div class="mb-2">
+          <label class="form-label">Nama Penyewa</label>
+          <input type="text" id="renterName" class="form-control" required>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Kontak/HP</label>
+          <input type="tel" id="renterPhone" class="form-control" required>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Mulai Sewa</label>
+          <input type="datetime-local" id="startAt" class="form-control" required>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Akhir Sewa</label>
+          <input type="datetime-local" id="endAt" class="form-control" required>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Harga per Jam (Rp)</label>
+          <input type="number" id="pricePerHour" class="form-control" value="5000" required>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Estimasi Harga (Rp)</label>
+          <input type="text" id="estPrice" class="form-control" readonly>
+        </div>
+        <div class="form-text">Notifikasi WhatsApp akan dibuka setelah konfirmasi untuk mengirim rincian ke penyewa.</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Batal</button>
+        <button class="btn btn-primary" type="submit">Konfirmasi & Sewa</button>
+      </div>
+    </form>
   </div>
 </div>
 
-<!-- Firebase SDKs (compat CDN for simpler code) -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-<script>
-// Helper: wait until firebase is available (max timeout)
-function waitForFirebase(timeoutMs = 5000) {
-  return new Promise((resolve, reject) => {
-    const start = Date.now();
-    (function check(){
-      if(window.firebase) return resolve(window.firebase);
-      if(Date.now() - start > timeoutMs) return reject(new Error('Firebase not available after waiting'));
-      setTimeout(check, 50);
-    })();
-  });
-}
-
-(async function main(){
-  try{
-    await waitForFirebase(5000);
-  }catch(err){
-    console.error('Firebase SDK tidak tersedia:', err);
-    alert('Terjadi kesalahan: Firebase SDK tidak dimuat. Cek koneksi dan tag <script> Firebase.');
-    return;
-  }
-
-  // TODO: Ganti config ini dengan config Firebase project Anda
-  const firebaseConfig = {
-    apiKey:"AIzaSyB5uHlXqwLiAmsUeF4Qawsmv0iNRGRdi3c",
-    authDomain:"sewa-motor-ba94a.firebaseapp.com",
-    projectId:"sewa-motor-ba94a",
-    storageBucket:"sewa-motor-ba94a.appspot.com",
-    messagingSenderId:"921374655717",
-    appId:"1:921374655717:web:d7b21349675a530045c00c",
-  };
-
-  // Initialize
-  try{
-    if(!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseConfig);
-  }catch(e){
-    console.warn('initializeApp warning:', e.message);
-  }
-
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-
-  // Global state
-  let motors = {}; // cache motor documents
-  let currentUser = null;
-
-  // --- Init: sample motors if none exist ---
-  async function seedMotorsIfEmpty(){
-    const snap = await db.collection('motors').limit(1).get();
-    if(snap.empty){
-      const sample = [
-        {name:'Honda Beat', plat:'DD 1234 AB', ratePerHour:10000, status:'available'},
-        {name:'Yamaha Mio', plat:'DD 2345 BC', ratePerHour:12000, status:'available'},
-        {name:'Suzuki Smash', plat:'DD 3456 CD', ratePerHour:9000, status:'available'}
-      ];
-      for(const m of sample) await db.collection('motors').add(m);
-    }
-  }
-
-  // --- Render motor list ---
-  function renderMotors(){
-    const container = document.getElementById('motorList');
-    if(!container) return;
-    container.innerHTML='';
-    Object.entries(motors).forEach(([id, m])=>{
-      const col = document.createElement('div'); col.className='col-md-4 mb-3';
-      col.innerHTML = `
-        <div class="card motor-card">
-          <div class="card-body">
-            <h5 class="card-title">${m.name}</h5>
-            <p class="card-text">Plat: ${m.plat || '-'}<br>Tarif: Rp ${m.ratePerHour.toLocaleString()} / jam</p>
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <span class="badge ${m.status==='rented'?'badge-rented':'badge-available'}">${m.status}</span>
-              </div>
-              <div>
-                <button class="btn btn-sm btn-outline-primary me-2" onclick="openBooking('${id}')" ${m.status==='rented'?'disabled':''}>Sewa</button>
-                <button class="btn btn-sm btn-outline-secondary" onclick="viewMotor('${id}')">Detail</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-      container.appendChild(col);
-    });
-  }
-
-  window.openBooking = function(motorId){
-    const m = motors[motorId] || {};
-    const rateInput = document.getElementById('ratePerHour');
-    document.getElementById('motorId').value = motorId;
-    if(rateInput) rateInput.value = m.ratePerHour || 0;
-    document.getElementById('startDate').value = '';
-    document.getElementById('endDate').value = '';
-    document.getElementById('totalPrice').value = '';
-    const modal = new bootstrap.Modal(document.getElementById('bookingModal'));
-    modal.show();
-  }
-
-  window.viewMotor = function(motorId){
-    const m = motors[motorId] || {};
-    alert(`Motor: ${m.name || '-'}\nPlat: ${m.plat || '-'}\nTarif/jam: Rp ${m.ratePerHour ? m.ratePerHour.toLocaleString() : '-'}\nStatus: ${m.status || '-'}`)
-  }
-
-  // Calculate price when dates change
-  function calcPrice(){
-    const start = document.getElementById('startDate')?.value;
-    const end = document.getElementById('endDate')?.value;
-    const rate = Number(document.getElementById('ratePerHour')?.value || 0);
-    if(!start || !end) return;
-    const s = new Date(start);
-    const e = new Date(end);
-    if(e<=s){ document.getElementById('totalPrice').value = 'Tanggal tidak valid'; return; }
-    const diffMs = e - s;
-    const hours = diffMs / (1000*60*60);
-    const total = Math.ceil(hours) * rate; // round up hours
-    document.getElementById('totalPrice').value = total;
-  }
-
-  // Booking submission
-  const bookingForm = document.getElementById('bookingForm');
-  if(bookingForm){
-    bookingForm.addEventListener('submit', async (ev)=>{
-      ev.preventDefault();
-      const motorId = document.getElementById('motorId').value;
-      const renterName = document.getElementById('renterName').value;
-      const start = document.getElementById('startDate').value;
-      const end = document.getElementById('endDate').value;
-      const note = document.getElementById('note').value;
-      const price = Number(document.getElementById('totalPrice').value || 0);
-      // create booking doc with status 'pending'
-      await db.collection('bookings').add({
-        motorId, renterName, start: firebase.firestore.Timestamp.fromDate(new Date(start)), end: firebase.firestore.Timestamp.fromDate(new Date(end)), price, note, status:'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      // close modal
-      bootstrap.Modal.getInstance(document.getElementById('bookingModal')).hide();
-      alert('Pesanan dibuat. Tunggu konfirmasi admin.');
-    });
-  }
-
-  // WhatsApp button behavior (prefill message)
-  const btnWA = document.getElementById('btnSendWhatsApp');
-  if(btnWA){
-    btnWA.addEventListener('click', ()=>{
-      const motorId = document.getElementById('motorId').value;
-      const m = motors[motorId] || {name:'-'};
-      const renterName = document.getElementById('renterName')?.value || '[Nama]';
-      const start = document.getElementById('startDate')?.value || '-';
-      const end = document.getElementById('endDate')?.value || '-';
-      const price = document.getElementById('totalPrice')?.value || 0;
-      const note = document.getElementById('note')?.value || '-';
-      const message = `Pemesanan%20Motor%20%3A%20${encodeURIComponent(m.name)}%0ANama%20Penyewa%3A%20${encodeURIComponent(renterName)}%0AMulai%3A%20${encodeURIComponent(start)}%0ASelesai%3A%20${encodeURIComponent(end)}%0AHarga%3A%20Rp%20${encodeURIComponent(price)}%0ANote%3A%20${encodeURIComponent(note)}`;
-      // open wa.me (no automatic sending) - ganti nomor admin sesuai kebutuhan
-      const adminPhone = '+628123456789';
-      window.open(`https://wa.me/${adminPhone.replace(/[^0-9]/g,'')}?text=${message}`, '_blank');
-    });
-  }
-
-  // Admin login
-  const loginForm = document.getElementById('loginForm');
-  if(loginForm){
-    loginForm.addEventListener('submit', async (ev)=>{
-      ev.preventDefault();
-      const email = document.getElementById('adminEmail').value;
-      const pass = document.getElementById('adminPass').value;
-      try{
-        const result = await auth.signInWithEmailAndPassword(email, pass);
-        currentUser = result.user;
-        alert('Login berhasil');
-        document.getElementById('btnAdminPanel').classList.remove('d-none');
-        document.getElementById('adminPanel').classList.remove('d-none');
-        // close modal
-        bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
-      }catch(err){
-        alert('Login gagal: '+err.message);
-      }
-    });
-  }
-
-  // Admin panel toggle
-  const btnAdminPanel = document.getElementById('btnAdminPanel');
-  if(btnAdminPanel) btnAdminPanel.addEventListener('click', ()=>{
-    const ap = document.getElementById('adminPanel');
-    ap.classList.toggle('d-none');
-  });
-
-  // Buku kas form
-  const bukuKasForm = document.getElementById('bukuKasForm');
-  if(bukuKasForm){
-    bukuKasForm.addEventListener('submit', async (ev)=>{
-      ev.preventDefault();
-      const date = document.getElementById('bkDate').value;
-      const desc = document.getElementById('bkDesc').value;
-      const amount = Number(document.getElementById('bkAmount').value);
-      await db.collection('buku_kas').add({date: firebase.firestore.Timestamp.fromDate(new Date(date)), desc, amount, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
-      document.getElementById('bkDate').value=''; document.getElementById('bkDesc').value=''; document.getElementById('bkAmount').value='';
-    });
-  }
-
-  // Export buku kas to PDF
-  const exportPdfBtn = document.getElementById('exportPdfBtn');
-  if(exportPdfBtn){
-    exportPdfBtn.addEventListener('click', async ()=>{
-      const snap = await db.collection('buku_kas').orderBy('date','asc').get();
-      const { jsPDF } = window.jspdf || {};
-      const doc = new (jsPDF || window.jspdf || window.jsPDF)();
-      doc.setFontSize(14); doc.text('Buku Kas', 14, 20);
-      let y=30;
-      snap.forEach(s=>{
-        const d = s.data();
-        const dateStr = d.date && d.date.toDate ? d.date.toDate().toLocaleDateString() : '';
-        const line = `${dateStr} | ${d.desc} | Rp ${d.amount.toLocaleString()}`;
-        if(y>270){ doc.addPage(); y=20; }
-        doc.text(line, 14, y); y+=8;
-      });
-      doc.save('buku_kas.pdf');
-    });
-  }
-
-  // Real-time listeners
-  function startListeners(){
-    db.collection('motors').onSnapshot(snap=>{
-      // removed stray character that caused syntax error
-      snap.docChanges().forEach(ch=>{
-        // noop (reserved for future use if needed)
-      });
-      motors={};
-      snap.forEach(d=> motors[d.id]=d.data());
-      renderMotors();
-    });
-
-    db.collection('bookings').orderBy('createdAt','desc').onSnapshot(snap=>{
-      const container = document.getElementById('bookingList');
-      if(!container) return;
-      container.innerHTML='';
-      snap.forEach(d=>{
-        const b = d.data();
-        const id = d.id;
-        const motor = motors[b.motorId] ? motors[b.motorId].name : b.motorId;
-        const start = b.start && b.start.toDate ? b.start.toDate().toLocaleString() : '';
-        const end = b.end && b.end.toDate ? b.end.toDate().toLocaleString() : '';
-        const row = document.createElement('div');
-        row.className='card mb-2';
-        row.innerHTML = `<div class="card-body"><b>${motor}</b><br>${b.renterName} | ${start} - ${end}<br>Rp ${b.price.toLocaleString()}<br>Status: ${b.status}<div class="mt-2">`+
-          (b.status==='pending'?`<button class="btn btn-sm btn-success me-2" onclick="confirmBooking('${id}')">Konfirmasi</button>`:'')+
-          (b.status==='rented'?`<button class="btn btn-sm btn-warning me-2" onclick="finishBooking('${id}')">Selesai</button>`:'')+
-          `<button class="btn btn-sm btn-danger" onclick="deleteBooking('${id}')">Hapus</button></div></div>`;
-        container.appendChild(row);
-      });
-    });
-
-    db.collection('buku_kas').orderBy('date','desc').onSnapshot(snap=>{
-      const c = document.getElementById('bukuKasList'); if(!c) return; c.innerHTML='';
-      snap.forEach(d=>{
-        const bk = d.data();
-        const dateStr = bk.date && bk.date.toDate ? bk.date.toDate().toLocaleDateString() : '';
-        const item = document.createElement('div');
-        item.className='p-2 border-bottom';
-        item.innerHTML = `<b>${dateStr}</b> <br>${bk.desc} <br>Rp ${bk.amount.toLocaleString()}`;
-        c.appendChild(item);
-      });
-    });
-  }
-
-  // Admin actions
-  window.confirmBooking = async function(bookingId){
-    const doc = await db.collection('bookings').doc(bookingId).get();
-    const b = doc.data();
-    // set booking to rented and mark motor status
-    await db.collection('bookings').doc(bookingId).update({status:'rented', confirmedAt: firebase.firestore.FieldValue.serverTimestamp()});
-    await db.collection('motors').doc(b.motorId).update({status:'rented'});
-    // add to buku_kas as income
-    await db.collection('buku_kas').add({date: firebase.firestore.Timestamp.now(), desc:`Sewa ${b.renterName} - ${bookingId}`, amount: b.price, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
-  }
-
-  window.finishBooking = async function(bookingId){
-    const doc = await db.collection('bookings').doc(bookingId).get();
-    const b = doc.data();
-    await db.collection('bookings').doc(bookingId).update({status:'finished', finishedAt: firebase.firestore.FieldValue.serverTimestamp()});
-    await db.collection('motors').doc(b.motorId).update({status:'available'});
-  }
-
-  window.deleteBooking = async function(bookingId){
-    if(!confirm('Hapus booking ini?')) return;
-    await db.collection('bookings').doc(bookingId).delete();
-  }
-
-  // Initialize
-  await seedMotorsIfEmpty();
-  startListeners();
-
-  // price calc connect events
-  ['startDate','endDate'].forEach(id=>{
-    const el = document.getElementById(id);
-    if(el) el.addEventListener('change', calcPrice);
-  });
-
-})();
-</script>
+<script type="module" src="./script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
