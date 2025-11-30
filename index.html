@@ -97,13 +97,16 @@
       import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
       const firebaseConfig = {
-        apiKey: "API_KEY_ANDA",
-        authDomain: "PROJECT_ID.firebaseapp.com",
-        projectId: "PROJECT_ID",
-        storageBucket: "PROJECT_ID.appspot.com",
-        messagingSenderId: "SENDER_ID",
-        appId: "APP_ID"
+        apiKey: "AIzaSyB5uHlXqwLiAmsUeF4Qawsmv0iNRGRdi3c",
+        authDomain: "sewa-motor-ba94a.firebaseapp.com",
+        databaseURL: "https://sewa-motor-ba94a-default-rtdb.firebaseio.com",
+        projectId: "sewa-motor-ba94a",
+        storageBucket: "sewa-motor-ba94a.firebasestorage.app",
+        messagingSenderId: "921374655717",
+        appId: "1:921374655717:web:d7b21349675a530045c00c",
+        measurementId: "G-0R8TNWLTR4"
       };
+
 
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
@@ -343,3 +346,4 @@ adminBtn.addEventListener("click", () => {
       // ======= Initial Admin Render =======
       renderAdminMotors();
     </script>
+
