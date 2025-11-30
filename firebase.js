@@ -8,9 +8,10 @@ const firebaseConfig = {
   authDomain: "sewa-motor-ba94a.firebaseapp.com",
   databaseURL: "https://sewa-motor-ba94a-default-rtdb.firebaseio.com",
   projectId: "sewa-motor-ba94a",
-  storageBucket: "sewa-motor-ba94a.firebasestorage.ap",
+  storageBucket: "sewa-motor-ba94a.firebasestorage.app",
   messagingSenderId: "921374655717",
-  appId: "1:921374655717:web:d7b21349675a530045c00c"
+  appId: "1:921374655717:web:d7b21349675a530045c00c",
+  measurementId: "G-0R8TNWLTR4"
 };
 
 export const app = initializeApp(firebaseConfig);
